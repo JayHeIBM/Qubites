@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "DRY_RUN=1 node test-dm.js U_TEST_TARGET U_TEST_REQUESTER"
   },
   "repository": {
     "type": "git",
