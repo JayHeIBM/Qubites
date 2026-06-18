@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase-browser'
 
 import { allergyColumns, dietaryRestrictionColumns, cuisineColumns } from '@/lib/preferences'
 
@@ -15,6 +16,7 @@ const TOTAL_STEPS = 5
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  const [saving, setSaving] = useState(false)
 
   // Selections for each checklist step
   const [allergens, setAllergens] = useState<Set<string>>(new Set())
@@ -25,9 +27,38 @@ export default function OnboardingPage() {
     setStep((s) => s + 1)
   }
 
-  function finish() {
-    // TODO: persist selections to user profile when auth is implemented
-    router.push('/home') // routes to app/(main)/home
+  async function finish() {
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        const slackId =
+          user.user_metadata?.slack_id ??
+          // fallback: look up by email in the users table via the API
+          null
+
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slackId,
+            name: user.user_metadata?.name ?? null,
+            role: 'employee',
+            cuisines: Array.from(preferences),
+            dietaryRestrictions: Array.from(restrictions),
+            allergies: Array.from(allergens),
+          }),
+        })
+      }
+    } catch (err) {
+      // Non-fatal: user still proceeds; preferences can be set later in profile.
+      console.error('[onboarding] Failed to save preferences:', err)
+    } finally {
+      setSaving(false)
+      router.push('/home')
+    }
   }
 
   return (
@@ -70,7 +101,7 @@ export default function OnboardingPage() {
         />
       )}
 
-      {step === 5 && <DoneStep onFinish={finish} />}
+      {step === 5 && <DoneStep onFinish={finish} saving={saving} />}
     </OnboardingLayout>
   )
 }

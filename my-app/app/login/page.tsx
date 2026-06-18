@@ -1,18 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import QubitesBrand from '../components/QubitesBrand'
 import SlackSignInButton from '../components/SlackSignInButton'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   function handleSlackSignIn() {
     setLoading(true)
-    // TODO: replace with real Slack OAuth once auth is implemented
-    router.push('/onboarding')
+    // Kick off the Slack OAuth flow — the browser will follow the redirect chain:
+    //   /api/auth/slack  →  slack.com  →  /api/auth/slack/callback  →  /onboarding or /home
+    window.location.href = '/api/auth/slack'
   }
 
   return (

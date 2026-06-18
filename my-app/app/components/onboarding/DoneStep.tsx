@@ -1,12 +1,13 @@
 interface DoneStepProps {
   onFinish: () => void
+  saving?: boolean
 }
 
 /**
  * DoneStep — Step 5 of 5
  * Confirms that onboarding is complete.
  */
-export default function DoneStep({ onFinish }: DoneStepProps) {
+export default function DoneStep({ onFinish, saving = false }: DoneStepProps) {
   return (
     <>
       {/* Success icon */}
@@ -32,9 +33,10 @@ export default function DoneStep({ onFinish }: DoneStepProps) {
       {/* CTA */}
       <button
         onClick={onFinish}
-        className="w-full bg-green-600 hover:bg-green-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
+        disabled={saving}
+        className="w-full bg-green-600 hover:bg-green-700 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
       >
-        Go to Home
+        {saving ? 'Saving…' : 'Go to Home'}
       </button>
     </>
   )
