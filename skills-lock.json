@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ui-creation-skill": {
+      "source": "git@github.ibm.com:AI-CoE/infra-ai-coe-skills.git",
+      "sourceType": "git",
+      "skillPath": "skills/ui-creation-skill/SKILL.md",
+      "computedHash": "3489a7e1400b1ab0c43bd48076d0df6ec63f096a7573b38806badfd6e87ca117"
+    }
+  }
+}
