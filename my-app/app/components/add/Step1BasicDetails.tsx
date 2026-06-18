@@ -50,7 +50,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+      className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
     />
   )
 }
@@ -179,7 +179,7 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
           <FieldLabel required>Available until</FieldLabel>
           <Input
             type="datetime-local"
-            value={form.availableUntil || defaultExpiry()}
+            value={form.availableUntil}
             onChange={e => onChange({ availableUntil: e.target.value })}
           />
         </div>
@@ -208,7 +208,7 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
           placeholder="Any details about the food — ingredients, freshness, etc."
           value={form.description}
           onChange={e => onChange({ description: e.target.value })}
-          className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+          className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
         />
       </div>
 

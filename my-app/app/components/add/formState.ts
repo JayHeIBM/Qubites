@@ -13,6 +13,27 @@ export interface NewListingForm {
   imagePreviewUrl: string | null
 }
 
+/** Returns a datetime-local string 2 hours from now, rounded to the next 15-min boundary. */
+export function defaultExpiry(): string {
+  const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0)
+  return d.toISOString().slice(0, 16)
+}
+
+export function makeEmptyForm(): NewListingForm {
+  return {
+    type: 'leftover',
+    title: '',
+    portions: '',
+    availableUntil: defaultExpiry(),
+    location: '',
+    description: '',
+    imageFile: null,
+    imagePreviewUrl: null,
+  }
+}
+
+/** @deprecated use makeEmptyForm() — kept for any remaining import references */
 export const EMPTY_FORM: NewListingForm = {
   type: 'leftover',
   title: '',
@@ -28,9 +49,9 @@ export const EMPTY_FORM: NewListingForm = {
 
 /**
  * For each tag key (e.g. "gluten", "italian"):
- *   'ai'        — AI suggested, not yet confirmed by user
+ *   'ai'        — Ollama suggested, not yet confirmed by user
  *   'confirmed' — user explicitly checked it (green)
- *   'none'      — unselected (grey)
+ *   'none'      — unselected
  */
 export type TagState = 'ai' | 'confirmed' | 'none'
 
@@ -40,99 +61,67 @@ export interface TagConfirmation {
   preferences:  Record<string, TagState>
 }
 
-// ── AI suggestion simulator ───────────────────────────────────────────────────
+// ── Ollama tag fetch ──────────────────────────────────────────────────────────
+
+interface FoodTagsApiResponse {
+  allergens:    string[]
+  restrictions: string[]
+  cuisines:     string[]
+  error?:       string
+}
 
 /**
- * Very simple keyword-based AI simulation.
- * In production this would be replaced by a real model call to the backend.
- * Returns a TagConfirmation with 'ai' on plausible tags and 'none' elsewhere.
+ * Calls the `/api/food-tags` route (which calls Ollama) and converts the
+ * response into a TagConfirmation with 'ai' on suggested keys.
  */
-
-const ALLERGEN_KEYWORDS: Record<string, string[]> = {
-  dairy:     ['cheese', 'cream', 'milk', 'butter', 'yogurt', 'ricotta', 'brie', 'feta'],
-  milk:      ['milk', 'latte', 'cappuccino', 'dairy'],
-  egg:       ['egg', 'omelette', 'frittata', 'quiche', 'mayo', 'mayonnaise'],
-  peanut:    ['peanut', 'satay'],
-  tree_nut:  ['nut', 'almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut', 'macadamia'],
-  soy:       ['soy', 'tofu', 'miso', 'edamame', 'tempeh'],
-  wheat:     ['bread', 'pasta', 'flour', 'bagel', 'sandwich', 'wrap', 'pizza', 'noodle', 'sourdough'],
-  gluten:    ['bread', 'pasta', 'flour', 'bagel', 'sandwich', 'wrap', 'pizza', 'noodle', 'sourdough', 'wheat', 'brownie', 'cake', 'cookie'],
-  sesame:    ['sesame', 'tahini', 'hummus'],
-  fish:      ['fish', 'salmon', 'tuna', 'cod', 'anchovy', 'sardine', 'tilapia'],
-  shellfish: ['shrimp', 'prawn', 'crab', 'lobster', 'shellfish', 'scallop', 'clam', 'oyster'],
-  mustard:   ['mustard', 'hot dog'],
-  coconut:   ['coconut'],
-}
-
-const RESTRICTION_KEYWORDS: Record<string, string[]> = {
-  vegetarian: ['vegetarian', 'veggie', 'meatless', 'cheese', 'egg', 'pasta', 'pizza', 'salad', 'caprese', 'feta', 'fruit'],
-  vegan:      ['vegan', 'plant-based', 'dairy-free', 'brownie vegan'],
-  pescatarian:['fish', 'salmon', 'tuna', 'seafood', 'pescatarian'],
-  halal:      ['halal'],
-  kosher:     ['kosher'],
-  no_beef:    ['chicken', 'turkey', 'pork', 'lamb', 'veggie', 'vegetarian', 'vegan'],
-  no_pork:    ['chicken', 'turkey', 'beef', 'halal', 'kosher'],
-}
-
-const PREFERENCE_KEYWORDS: Record<string, string[]> = {
-  american:      ['burger', 'hot dog', 'bbq', 'mac and cheese', 'brownie', 'cookie'],
-  mexican:       ['taco', 'burrito', 'quesadilla', 'salsa', 'guacamole', 'enchilada'],
-  italian:       ['pasta', 'lasagna', 'pizza', 'risotto', 'tiramisu', 'focaccia', 'carbonara', 'bolognese', 'pesto', 'bruschetta'],
-  french:        ['baguette', 'croissant', 'macaron', 'quiche', 'brie', 'ratatouille', 'soufflé', 'crepe'],
-  greek:         ['greek', 'gyro', 'tzatziki', 'feta', 'spanakopita', 'souvlaki'],
-  mediterranean: ['hummus', 'falafel', 'tabbouleh', 'olive', 'pita', 'mediterranean', 'greek salad'],
-  indian:        ['curry', 'biryani', 'naan', 'tikka', 'masala', 'dal', 'samosa', 'chutney', 'basmati'],
-  chinese:       ['fried rice', 'dim sum', 'dumpling', 'wonton', 'noodle', 'kung pao', 'chow mein'],
-  japanese:      ['sushi', 'ramen', 'tempura', 'miso', 'teriyaki', 'sashimi', 'onigiri', 'bento'],
-  korean:        ['bibimbap', 'kimchi', 'korean', 'bulgogi', 'japchae', 'tteok'],
-  thai:          ['pad thai', 'thai', 'green curry', 'tom yum', 'satay'],
-  vietnamese:    ['pho', 'banh mi', 'spring roll', 'vietnamese'],
-  brazilian:     ['churrasco', 'feijoada', 'brigadeiro', 'coxinha'],
-  peruvian:      ['ceviche', 'peruvian', 'lomo saltado'],
-}
-
-function matchKeywords(text: string, keywords: string[]): boolean {
-  const lower = text.toLowerCase()
-  return keywords.some(k => lower.includes(k))
-}
-
-function suggestGroup(
-  text: string,
-  keywordMap: Record<string, string[]>,
-  allKeys: readonly string[],
-): Record<string, TagState> {
-  return Object.fromEntries(
-    allKeys.map(key => [
-      key,
-      matchKeywords(text, keywordMap[key] ?? []) ? 'ai' : 'none',
-    ])
-  )
-}
-
-export function simulateAiSuggestions(
-  title: string,
+export async function fetchAiSuggestions(
+  foodName: string,
   description: string,
-  allergyKeys: readonly string[],
-  restrictionKeys: readonly string[],
-  preferenceKeys: readonly string[],
-): TagConfirmation {
-  const text = `${title} ${description}`
+  allergyKeys:      readonly string[],
+  restrictionKeys:  readonly string[],
+  preferenceKeys:   readonly string[],
+): Promise<TagConfirmation> {
+  const res = await fetch('/api/food-tags', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ foodName, description }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Tag API error ${res.status}`)
+  }
+
+  const data = (await res.json()) as FoodTagsApiResponse
+
+  if (data.error) {
+    throw new Error(data.error)
+  }
+
+  // Ollama returns lowercase keys matching the .txt files / preferences.ts arrays.
+  // Mark each key 'ai' if it appears in the response, 'none' otherwise.
+  const toState = (keys: readonly string[], suggested: string[]): Record<string, TagState> =>
+    Object.fromEntries(
+      keys.map(k => [k, suggested.includes(k) ? 'ai' : 'none'] as [string, TagState])
+    )
+
   return {
-    allergens:    suggestGroup(text, ALLERGEN_KEYWORDS,    allergyKeys),
-    restrictions: suggestGroup(text, RESTRICTION_KEYWORDS, restrictionKeys),
-    preferences:  suggestGroup(text, PREFERENCE_KEYWORDS,  preferenceKeys),
+    allergens:    toState(allergyKeys,     data.allergens    ?? []),
+    restrictions: toState(restrictionKeys, data.restrictions ?? []),
+    preferences:  toState(preferenceKeys,  data.cuisines     ?? []),
   }
 }
 
+// ── Copy pre-fill ─────────────────────────────────────────────────────────────
+
 /**
  * Builds a TagConfirmation pre-filled from a copied listing's tags.
- * All previously confirmed tags come in as 'confirmed' (green).
+ * All previously confirmed tags come in as 'confirmed' (green), rest 'none'.
  */
 export function buildCopiedTagConfirmation(
   copiedTags: { label: string; kind: 'allergen' | 'restriction' | 'preference' }[],
-  allergyKeys: readonly string[],
-  restrictionKeys: readonly string[],
-  preferenceKeys: readonly string[],
+  allergyKeys:      readonly string[],
+  restrictionKeys:  readonly string[],
+  preferenceKeys:   readonly string[],
 ): TagConfirmation {
   const toState = (keys: readonly string[], kind: 'allergen' | 'restriction' | 'preference') =>
     Object.fromEntries(
@@ -146,8 +135,24 @@ export function buildCopiedTagConfirmation(
     )
 
   return {
-    allergens:    toState(allergyKeys,      'allergen'),
-    restrictions: toState(restrictionKeys,  'restriction'),
-    preferences:  toState(preferenceKeys,   'preference'),
+    allergens:    toState(allergyKeys,     'allergen'),
+    restrictions: toState(restrictionKeys, 'restriction'),
+    preferences:  toState(preferenceKeys,  'preference'),
+  }
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+export function emptyTagConfirmation(
+  allergyKeys:     readonly string[],
+  restrictionKeys: readonly string[],
+  preferenceKeys:  readonly string[],
+): TagConfirmation {
+  const none = (keys: readonly string[]) =>
+    Object.fromEntries(keys.map(k => [k, 'none' as TagState]))
+  return {
+    allergens:    none(allergyKeys),
+    restrictions: none(restrictionKeys),
+    preferences:  none(preferenceKeys),
   }
 }

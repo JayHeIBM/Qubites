@@ -11,9 +11,11 @@ import Step1BasicDetails from '@/app/components/add/Step1BasicDetails'
 import Step2TagVerification from '@/app/components/add/Step2TagVerification'
 
 import {
-  EMPTY_FORM,
-  simulateAiSuggestions,
+  makeEmptyForm,
+  defaultExpiry,
+  fetchAiSuggestions,
   buildCopiedTagConfirmation,
+  emptyTagConfirmation,
   type NewListingForm,
   type TagConfirmation,
   type TagState,
@@ -40,31 +42,46 @@ function ProgressHeader({ step }: { step: 1 | 2 }) {
   )
 }
 
-// ── Initial tag state ─────────────────────────────────────────────────────────
+// ── Loading skeleton for tag step ─────────────────────────────────────────────
 
-function emptyTagConfirmation(): TagConfirmation {
-  const none = (keys: readonly string[]) =>
-    Object.fromEntries(keys.map(k => [k, 'none' as TagState]))
-  return {
-    allergens:    none(allergyColumns),
-    restrictions: none(dietaryRestrictionColumns),
-    preferences:  none(cuisineColumns),
-  }
+function TagLoadingSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 animate-pulse">
+      <div className="h-14 rounded-xl bg-blue-50 border border-blue-100" />
+      {['Allergens', 'Dietary Restrictions', 'Preferences / Cuisine'].map(title => (
+        <div key={title} className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-20 rounded bg-gray-200" />
+            <div className="h-4 w-16 rounded bg-blue-100" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-6 rounded-full bg-blue-100" style={{ width: `${52 + i * 14}px` }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
-// ── Inner component (needs useSearchParams) ───────────────────────────────────
+// ── Inner component (uses useSearchParams) ────────────────────────────────────
 
 function NewListingInner() {
-  const router = useRouter()
+  const router      = useRouter()
   const searchParams = useSearchParams()
-  const copyFromId = searchParams.get('copyFrom')
+  const copyFromId  = searchParams.get('copyFrom')
 
-  const [step, setStep] = useState<1 | 2>(1)
-  const [form, setForm] = useState<NewListingForm>(EMPTY_FORM)
-  const [tags, setTags] = useState<TagConfirmation>(emptyTagConfirmation)
-  const [isCopied, setIsCopied] = useState(false)
+  const [step, setStep]       = useState<1 | 2>(1)
+  const [form, setForm]       = useState<NewListingForm>(makeEmptyForm)
+  const [tags, setTags]       = useState<TagConfirmation>(() =>
+    emptyTagConfirmation(allergyColumns, dietaryRestrictionColumns, cuisineColumns)
+  )
+  const [isCopied, setIsCopied]       = useState(false)
+  const [tagsLoading, setTagsLoading] = useState(false)
+  const [tagsError, setTagsError]     = useState<string | null>(null)
 
-  // Pre-fill form + tags if a copyFrom id is present
+  // ── Copy pre-fill ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!copyFromId) return
     const source = MOCK_MY_LISTINGS.find(l => l.id === copyFromId)
@@ -74,11 +91,11 @@ function NewListingInner() {
       type: source.type,
       title: source.title,
       portions: String(source.portionsTotal),
-      availableUntil: '',      // expiry is intentionally not copied — must be set fresh
+      availableUntil: defaultExpiry(), // expiry is not copied — seeded to default so button is enabled
       location: source.location,
       description: source.description ?? '',
       imageFile: null,
-      imagePreviewUrl: null,   // image not copied — user must re-upload
+      imagePreviewUrl: null, // image not copied
     })
 
     setTags(buildCopiedTagConfirmation(
@@ -90,14 +107,22 @@ function NewListingInner() {
     setIsCopied(true)
   }, [copyFromId])
 
+  // ── Patch helper ────────────────────────────────────────────────────────────
   function patchForm(patch: Partial<NewListingForm>) {
     setForm(prev => ({ ...prev, ...patch }))
   }
 
-  function handleAdvanceToStep2() {
-    // If not a copy, run AI suggestion simulation
-    if (!isCopied) {
-      const aiTags = simulateAiSuggestions(
+  // ── Advance to Step 2 — call Ollama (unless it's a copy) ───────────────────
+  async function handleAdvanceToStep2() {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setStep(2)
+    setTagsError(null)
+
+    if (isCopied) return // tags already pre-filled from copy
+
+    setTagsLoading(true)
+    try {
+      const aiTags = await fetchAiSuggestions(
         form.title,
         form.description,
         allergyColumns,
@@ -105,15 +130,21 @@ function NewListingInner() {
         cuisineColumns,
       )
       setTags(aiTags)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      setTagsError(`Could not reach the AI model — ${msg}. You can still tag manually.`)
+      // Reset to all-none so user can manually select
+      setTags(emptyTagConfirmation(allergyColumns, dietaryRestrictionColumns, cuisineColumns))
+    } finally {
+      setTagsLoading(false)
     }
-    setStep(2)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // ── Tag toggle ──────────────────────────────────────────────────────────────
   function toggleTag(groupKey: keyof TagConfirmation, tagKey: string) {
     setTags(prev => {
       const current = prev[groupKey][tagKey] ?? 'none'
-      // Cycle: none → confirmed → none   |   ai → confirmed → none
+      // ai → confirmed; confirmed → none; none → confirmed
       const next: TagState = current === 'confirmed' ? 'none' : 'confirmed'
       return {
         ...prev,
@@ -122,6 +153,7 @@ function NewListingInner() {
     })
   }
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   function handleSubmit() {
     // TODO: POST to backend with form data + confirmed tags when API is ready
     console.log('Submitting listing:', { form, tags })
@@ -134,7 +166,7 @@ function NewListingInner() {
       {/* Back nav */}
       <button
         type="button"
-        onClick={() => step === 2 ? setStep(1) : router.back()}
+        onClick={() => step === 2 ? (setStep(1), window.scrollTo({ top: 0, behavior: 'smooth' })) : router.back()}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -164,16 +196,30 @@ function NewListingInner() {
       )}
 
       {step === 2 && (
-        <Step2TagVerification
-          tags={tags}
-          allergyKeys={allergyColumns}
-          restrictionKeys={dietaryRestrictionColumns}
-          preferenceKeys={cuisineColumns}
-          onToggle={toggleTag}
-          onBack={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-          onSubmit={handleSubmit}
-          isCopied={isCopied}
-        />
+        <>
+          {/* Error banner — shown when Ollama is unreachable */}
+          {tagsError && (
+            <div className="mb-4 flex items-start gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-800">
+              <span className="flex-shrink-0 font-bold">⚠</span>
+              <span>{tagsError}</span>
+            </div>
+          )}
+
+          {tagsLoading ? (
+            <TagLoadingSkeleton />
+          ) : (
+            <Step2TagVerification
+              tags={tags}
+              allergyKeys={allergyColumns}
+              restrictionKeys={dietaryRestrictionColumns}
+              preferenceKeys={cuisineColumns}
+              onToggle={toggleTag}
+              onBack={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              onSubmit={handleSubmit}
+              isCopied={isCopied}
+            />
+          )}
+        </>
       )}
     </div>
   )
