@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { createOrUpdatePreferenceRow, hydrateUser } from "@/lib/backend";
+import {
+  createOrUpdatePreferenceRow,
+  hydrateFoodItem,
+} from "@/lib/backend";
 import {
   allergyColumns,
   buildBooleanRecord,
@@ -20,8 +23,8 @@ export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   const { data, error } = await supabase
-    .from("users")
-    .select("id, name, slack_id, role")
+    .from("food_items")
+    .select("id, name")
     .eq("id", id)
     .maybeSingle();
 
@@ -30,50 +33,36 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   if (!data) {
-    return NextResponse.json({ error: "User not found." }, { status: 404 });
+    return NextResponse.json({ error: "Food item not found." }, { status: 404 });
   }
 
-  return NextResponse.json(await hydrateUser(data));
+  return NextResponse.json(await hydrateFoodItem(data));
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const body = await request.json();
-
     const updates: {
-      slack_id?: string;
-      name?: string | null;
-      role?: "employee" | "chef";
+      name?: string;
     } = {};
 
     const cuisines = parseSelectedColumns(body?.cuisines, cuisineColumns, "cuisines");
-    const dietaryRestrictions = parseSelectedColumns(
-      body?.dietaryRestrictions,
+    const dietaryTags = parseSelectedColumns(
+      body?.dietaryTags,
       dietaryRestrictionColumns,
-      "dietaryRestrictions"
+      "dietaryTags"
     );
-    const allergies = parseSelectedColumns(
-      body?.allergies,
+    const allergens = parseSelectedColumns(
+      body?.allergens,
       allergyColumns,
-      "allergies"
+      "allergens"
     );
-
-    if ("slackId" in body) {
-      if (!body.slackId || typeof body.slackId !== "string") {
-        return NextResponse.json(
-          { error: "slackId must be a non-empty string." },
-          { status: 400 }
-        );
-      }
-
-      updates.slack_id = body.slackId;
-    }
 
     if ("name" in body) {
-      if (body.name !== null && typeof body.name !== "string") {
+      if (!body.name || typeof body.name !== "string") {
         return NextResponse.json(
-          { error: "name must be a string." },
+          { error: "name must be a non-empty string." },
           { status: 400 }
         );
       }
@@ -81,26 +70,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       updates.name = body.name;
     }
 
-    if ("role" in body) {
-      if (body.role !== "employee" && body.role !== "chef") {
-        return NextResponse.json(
-          { error: "role must be employee or chef." },
-          { status: 400 }
-        );
-      }
+    let foodItemRecord;
 
-      updates.role = body.role;
-    }
-
-    const shouldUpdateUser = Object.keys(updates).length > 0;
-    let userRecord;
-
-    if (shouldUpdateUser) {
+    if (Object.keys(updates).length > 0) {
       const { data, error } = await supabase
-        .from("users")
+        .from("food_items")
         .update(updates)
         .eq("id", id)
-        .select("id, name, slack_id, role")
+        .select("id, name")
         .maybeSingle();
 
       if (error) {
@@ -108,14 +85,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
 
       if (!data) {
-        return NextResponse.json({ error: "User not found." }, { status: 404 });
+        return NextResponse.json({ error: "Food item not found." }, { status: 404 });
       }
 
-      userRecord = data;
+      foodItemRecord = data;
     } else {
       const { data, error } = await supabase
-        .from("users")
-        .select("id, name, slack_id, role")
+        .from("food_items")
+        .select("id, name")
         .eq("id", id)
         .maybeSingle();
 
@@ -124,34 +101,34 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
 
       if (!data) {
-        return NextResponse.json({ error: "User not found." }, { status: 404 });
+        return NextResponse.json({ error: "Food item not found." }, { status: 404 });
       }
 
-      userRecord = data;
+      foodItemRecord = data;
     }
 
     await Promise.all([
       createOrUpdatePreferenceRow(
-        "user_cuisines",
-        "user_id",
+        "food_item_cuisines",
+        "food_item_id",
         id,
         buildBooleanRecord(cuisines, cuisineColumns)
       ),
       createOrUpdatePreferenceRow(
-        "user_dietary_restrictions",
-        "user_id",
+        "food_item_dietary_tags",
+        "food_item_id",
         id,
-        buildBooleanRecord(dietaryRestrictions, dietaryRestrictionColumns)
+        buildBooleanRecord(dietaryTags, dietaryRestrictionColumns)
       ),
       createOrUpdatePreferenceRow(
-        "user_allergies",
-        "user_id",
+        "food_item_allergens",
+        "food_item_id",
         id,
-        buildBooleanRecord(allergies, allergyColumns)
+        buildBooleanRecord(allergens, allergyColumns)
       ),
     ]);
 
-    return NextResponse.json(await hydrateUser(userRecord));
+    return NextResponse.json(await hydrateFoodItem(foodItemRecord));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error.";
 
@@ -163,7 +140,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   const { data, error } = await supabase
-    .from("users")
+    .from("food_items")
     .delete()
     .eq("id", id)
     .select("id")
@@ -174,7 +151,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   }
 
   if (!data) {
-    return NextResponse.json({ error: "User not found." }, { status: 404 });
+    return NextResponse.json({ error: "Food item not found." }, { status: 404 });
   }
 
   return new NextResponse(null, { status: 204 });
