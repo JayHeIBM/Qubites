@@ -1,0 +1,1091 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Qubites – App Design Document</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 36px 0 10px; color: #1f2328; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #1f2328; }
+  p  { margin-bottom: 10px; color: #1f2328; }
+  .muted { color: #57606a; font-size: 13px; }
+
+  .hero { margin-bottom: 28px; }
+  .hero .tagline { font-size: 13px; color: #57606a; margin-top: 2px; }
+
+  .badge {
+    display: inline-block;
+    background: #f0f4ff;
+    color: #3b82d4;
+    border: 1px solid #c7d8f8;
+    border-radius: 4px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+  .badge.green { background: #eafaf0; color: #2da44e; border-color: #a8d5b5; }
+  .badge.purple { background: #f3eeff; color: #7c5cd8; border-color: #cbb8f5; }
+
+  /* ── TOC ── */
+  .toc { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
+  .toc h3 { margin-bottom: 8px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { font-size: 13px; color: #3b82d4; padding: 2px 0; }
+  .toc li a { color: #3b82d4; text-decoration: none; }
+  .toc li a:hover { text-decoration: underline; }
+  .toc .toc-sub { font-size: 12px; color: #57606a; margin-left: 12px; }
+
+  /* ── Card ── */
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 520px) { .card-grid { grid-template-columns: 1fr; } }
+
+  /* ── Screen mockup ── */
+  .screen-wrap {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .screen {
+    flex-shrink: 0;
+    width: 160px;
+    min-height: 280px;
+    background: #fff;
+    border: 2px solid #d0d7de;
+    border-radius: 20px;
+    padding: 16px 12px;
+    font-size: 11px;
+    color: #1f2328;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .screen.green-border { border-color: #2da44e; }
+  .screen.purple-border { border-color: #7c5cd8; }
+  .screen-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #57606a;
+    margin-bottom: 4px;
+  }
+  .screen-title { font-size: 13px; font-weight: 700; }
+  .screen-desc { font-size: 11px; color: #57606a; margin-bottom: 4px; }
+  .screen-divider { border: none; border-top: 1px solid #e5e7eb; margin: 4px 0; }
+  .screen-btn {
+    background: #3b82d4;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: auto;
+  }
+  .screen-btn.green { background: #2da44e; }
+  .screen-btn.outline { background: #fff; color: #3b82d4; border: 1px solid #3b82d4; }
+  .screen-btn.slack { background: #4a154b; }
+  .screen-input {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    padding: 4px 7px;
+    font-size: 11px;
+    color: #57606a;
+  }
+  .screen-logo {
+    width: 48px; height: 48px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    margin: 12px auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #57606a; text-align: center;
+  }
+  .screen-check-row {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: #1f2328; padding: 2px 0;
+  }
+  .screen-check-row .chk {
+    width: 12px; height: 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+  .screen-check-row .chk.checked { background: #3b82d4; border-color: #3b82d4; color: #fff; }
+  .screen-tag {
+    display: inline-block;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: #57606a;
+    margin: 1px 2px 1px 0;
+  }
+  .screen-tag.allergen { border-color: #f5a623; color: #a05000; background: #fff8ee; }
+  .screen-tag.restriction { border-color: #7c5cd8; color: #5a3da8; background: #f3eeff; }
+  .screen-tag.preference { border-color: #2da44e; color: #1a6a30; background: #eafaf0; }
+  .screen-tag.free { border-color: #2da44e; color: #1a6a30; background: #eafaf0; font-weight: 700; }
+  .screen-tag.leftover { border-color: #3b82d4; color: #1a4a8a; background: #eef4ff; }
+  .screen-img {
+    width: 100%; height: 56px;
+    background: #e5e7eb;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #57606a;
+    margin-bottom: 4px;
+  }
+  .screen-nav {
+    margin-top: auto;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-around;
+    padding-top: 6px;
+  }
+  .screen-nav-item {
+    font-size: 10px;
+    text-align: center;
+    color: #57606a;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .screen-nav-item.active { color: #3b82d4; font-weight: 700; }
+  .screen-nav-icon { width: 16px; height: 16px; background: currentColor; border-radius: 3px; opacity: .25; }
+  .screen-nav-item.active .screen-nav-icon { opacity: 1; }
+  .screen-slider {
+    height: 6px; background: #e5e7eb; border-radius: 3px; margin: 3px 0;
+    position: relative; overflow: hidden;
+  }
+  .screen-slider-fill { height: 100%; background: #3b82d4; border-radius: 3px; }
+  .screen-filter {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;
+  }
+  .screen-filter-pill {
+    border: 1px solid #d0d7de;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: #57606a;
+    background: #fff;
+  }
+  .screen-filter-pill.active {
+    background: #eef4ff;
+    border-color: #3b82d4;
+    color: #3b82d4;
+    font-weight: 600;
+  }
+  .screen-step { font-size: 10px; color: #57606a; }
+  .screen-progress {
+    height: 3px; background: #e5e7eb; border-radius: 2px; margin-bottom: 6px;
+  }
+  .screen-progress-fill {
+    height: 100%; background: #3b82d4; border-radius: 2px;
+  }
+  .screen-note {
+    font-size: 10px; color: #57606a;
+    border-left: 2px solid #3b82d4;
+    padding-left: 5px;
+    margin: 3px 0;
+  }
+  .screen-note.green { border-color: #2da44e; }
+
+  .screen-detail { flex: 1; }
+  .screen-detail h3 { font-size: 13px; margin-bottom: 6px; }
+  .spec-list { list-style: none; padding: 0; }
+  .spec-list li {
+    font-size: 13px;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f1f3;
+    display: flex; align-items: flex-start; gap: 8px;
+    color: #1f2328;
+  }
+  .spec-list li:last-child { border-bottom: none; }
+  .spec-list li::before {
+    content: '';
+    flex-shrink: 0;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #3b82d4;
+    margin-top: 7px;
+  }
+  .spec-list li.green-dot::before { background: #2da44e; }
+  .spec-list li.purple-dot::before { background: #7c5cd8; }
+  .spec-note {
+    font-size: 12px;
+    color: #57606a;
+    padding: 6px 10px;
+    background: #eef4ff;
+    border-left: 3px solid #3b82d4;
+    border-radius: 0 4px 4px 0;
+    margin-top: 8px;
+  }
+  .spec-note.green { background: #eafaf0; border-color: #2da44e; }
+  .spec-note.orange { background: #fff8ee; border-color: #f5a623; }
+
+  /* ── Field mock ── */
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #57606a; margin-bottom: 3px; }
+  .field .input-mock {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #57606a;
+  }
+  .field .input-mock.tall { min-height: 52px; }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2px dashed #d0d7de;
+    border-radius: 8px;
+    background: #fff;
+    text-align: center;
+    padding: 20px;
+    color: #57606a;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Type selector ── */
+  .type-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .type-pill {
+    flex: 1; border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px 12px;
+    text-align: center; background: #fff; font-size: 13px; color: #57606a; cursor: default;
+  }
+  .type-pill.selected-blue { border-color: #3b82d4; background: #eef4ff; color: #1f2328; font-weight: 600; }
+  .type-pill.selected-green { border-color: #2da44e; background: #eafaf0; color: #1f2328; font-weight: 600; }
+  .type-pill .type-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .type-pill .type-desc { font-size: 11px; color: #57606a; }
+  .type-pill.selected-green .type-desc { color: #2da44e; }
+  .type-pill.selected-blue .type-desc { color: #3b82d4; }
+
+  /* ── Free food banner ── */
+  .free-banner {
+    background: #eafaf0; border: 1px solid #a8d5b5; border-radius: 6px;
+    padding: 10px 14px; font-size: 13px; color: #1f2328; margin-bottom: 12px;
+  }
+  .free-banner strong { color: #2da44e; }
+
+  /* ── Tags ── */
+  .tag-group { margin-bottom: 10px; }
+  .tag-group-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #57606a; margin-bottom: 5px; }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    display: flex; align-items: center; gap: 5px;
+    border: 1px solid #d0d7de; border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; cursor: default;
+    background: #fff; color: #1f2328;
+  }
+  .tag.ai-selected { border-color: #3b82d4; background: #eef4ff; font-weight: 600; }
+  .tag.ai-selected .tag-check { color: #3b82d4; font-weight: 700; }
+  .tag.grayed { color: #b0b8c1; border-color: #e5e7eb; background: #f7f8fa; }
+  .tag.user-confirmed { border-color: #2da44e; background: #eafaf0; font-weight: 600; }
+  .tag.user-confirmed .tag-check { color: #2da44e; font-weight: 700; }
+  .tag-check { font-size: 11px; }
+  .ai-note {
+    font-size: 12px; color: #57606a; margin-bottom: 8px; padding: 6px 10px;
+    background: #eef4ff; border-left: 3px solid #3b82d4; border-radius: 0 4px 4px 0;
+  }
+  .confirm-note {
+    font-size: 12px; color: #57606a; margin-top: 8px; padding: 6px 10px;
+    background: #eafaf0; border-left: 3px solid #2da44e; border-radius: 0 4px 4px 0;
+  }
+
+  /* ── Step list ── */
+  .steps { list-style: none; padding: 0; }
+  .steps li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f1f3; }
+  .steps li:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: #3b82d4; color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .step-num.green { background: #2da44e; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .step-desc { font-size: 13px; color: #57606a; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f0f1f3; font-weight: 600; padding: 7px 10px; text-align: left; border: 1px solid #e5e7eb; }
+  td { padding: 7px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .win { color: #2da44e; font-weight: 600; }
+  .excluded { color: #cf222e; font-weight: 600; }
+  .pity { color: #7c5cd8; }
+  .neutral { color: #57606a; }
+  th.col-raffle { background: #eef4ff; color: #3b82d4; }
+  th.col-free   { background: #eafaf0; color: #2da44e; }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: #e5e7eb; }
+  .tl-item { position: relative; margin-bottom: 14px; }
+  .tl-dot { position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #3b82d4; border: 2px solid #fff; box-shadow: 0 0 0 2px #3b82d4; }
+  .tl-dot.orange { background: #e85d04; box-shadow: 0 0 0 2px #e85d04; }
+  .tl-dot.green  { background: #2da44e; box-shadow: 0 0 0 2px #2da44e; }
+  .tl-time { font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; margin-bottom: 2px; }
+  .tl-body { font-size: 13px; }
+
+  /* ── Formula box ── */
+  .formula { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 16px; font-size: 13px; margin-bottom: 12px; }
+  .formula .eq { font-family: "SFMono-Regular", Consolas, monospace; color: #1f2328; font-size: 13px; }
+  .formula .note { font-size: 12px; color: #57606a; margin-top: 4px; }
+
+  /* ── Button mock ── */
+  .btn { display: inline-block; background: #3b82d4; color: #fff; border-radius: 6px; padding: 8px 20px; font-size: 13px; font-weight: 600; border: none; margin-top: 8px; cursor: default; }
+  .btn.green { background: #2da44e; }
+  .btn.slack { background: #4a154b; }
+
+  /* ── Nav bar mock ── */
+  .nav-bar {
+    display: flex; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    overflow: hidden; margin-bottom: 16px;
+  }
+  .nav-item {
+    flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; color: #57606a;
+    border-right: 1px solid #e5e7eb;
+  }
+  .nav-item:last-child { border-right: none; }
+  .nav-item.active { background: #eef4ff; color: #3b82d4; font-weight: 700; }
+  .nav-item .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+  .nav-item.add-btn { background: #3b82d4; color: #fff; }
+  .nav-item.add-btn .nav-icon { color: #fff; }
+
+  /* ── Food card ── */
+  .food-card {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    overflow: hidden; margin-bottom: 12px;
+  }
+  .food-card-img { width: 100%; height: 100px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #57606a; font-size: 13px; }
+  .food-card-body { padding: 12px 14px; }
+  .food-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .food-card-title { font-weight: 700; font-size: 14px; }
+  .food-card-timer { font-size: 12px; color: #e85d04; font-weight: 600; }
+  .food-card-meta { font-size: 12px; color: #57606a; margin-bottom: 6px; }
+  .food-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .food-card-tag { font-size: 11px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1px 7px; color: #57606a; }
+  .food-card-tag.allergen { border-color: #f5a623; color: #a05000; background: #fff8ee; }
+  .food-card-tag.restriction { border-color: #7c5cd8; color: #5a3da8; background: #f3eeff; }
+  .food-card-tag.preference { border-color: #2da44e; color: #1a6a30; background: #eafaf0; }
+  .food-card-tag.type-free { border-color: #2da44e; color: #2da44e; background: #eafaf0; font-weight: 700; }
+  .food-card-tag.type-leftover { border-color: #3b82d4; color: #3b82d4; background: #eef4ff; font-weight: 700; }
+  .food-card-footer { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .food-card-slider-wrap { flex: 1; }
+  .food-card-slider-label { font-size: 11px; color: #57606a; margin-bottom: 2px; }
+  .food-card-slider { height: 6px; background: #e5e7eb; border-radius: 3px; }
+  .food-card-slider-fill { height: 100%; background: #3b82d4; border-radius: 3px; }
+  .food-card-slider.full .food-card-slider-fill { background: #d0d7de; }
+  .claim-btn { flex-shrink: 0; background: #2da44e; color: #fff; border-radius: 6px; padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: default; }
+  .claim-btn.gray { background: #d0d7de; color: #57606a; }
+  .copy-btn { flex-shrink: 0; background: #fff; color: #3b82d4; border: 1px solid #3b82d4; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: default; }
+
+  /* ── Profile stat ── */
+  .stat-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .stat-box { flex: 1; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-num { font-size: 22px; font-weight: 700; color: #3b82d4; }
+  .stat-num.purple { color: #7c5cd8; }
+  .stat-label { font-size: 11px; color: #57606a; }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="hero">
+    <h1>Qubites</h1>
+    <div class="tagline muted">App design document — screens, components, and system logic</div>
+    <div style="margin-top:10px">
+      <span class="badge">Upload Flow</span>
+      <span class="badge">AI Tag Verification</span>
+      <span class="badge">Raffle System</span>
+      <span class="badge green">Free Food Type</span>
+      <span class="badge purple">Screens &amp; Components</span>
+    </div>
+  </div>
+
+  
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#auth">Authentication — Login</a></li>
+      <li><a href="#onboarding">Onboarding Flow</a>
+        <div class="toc-sub">Welcome · Allergens · Restrictions · Preferences · Done</div>
+      </li>
+      <li><a href="#nav">Bottom Navigation Bar</a></li>
+      <li><a href="#foodcard">Food Card Component</a></li>
+      <li><a href="#home">Home Tab</a></li>
+      <li><a href="#add">Add Tab &amp; Add Page</a></li>
+      <li><a href="#profile">Profile Tab</a></li>
+      <li><a href="#upload">Upload Flow &amp; AI Tag Verification</a></li>
+      <li><a href="#raffle">Raffle System &amp; Listing Types</a></li>
+      <li><a href="#distribution">Distribution Timeline</a></li>
+      <li><a href="#edge">Edge Cases &amp; Design Notes</a></li>
+    </ol>
+  </div>
+
+
+  
+  <h2 id="auth">1 · Authentication — Login</h2>
+
+  <div class="screen-wrap">
+    <div class="screen">
+      <div class="screen-label">Login</div>
+      <div class="screen-logo">Logo</div>
+      <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:2px">Qubites</div>
+      <div style="font-size:10px;color:#57606a;text-align:center;margin-bottom:10px">Reduce food waste, one bite at a time.</div>
+      <div style="flex:1"></div>
+      <div class="screen-btn slack">Sign in with Slack</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Spec</h3>
+      <ul class="spec-list">
+        <li>Centered layout — logo placeholder at top, app name, short tagline</li>
+        <li>Single CTA: <strong>Sign in with Slack</strong> — uses Slack OAuth, no manual credentials</li>
+        <li>On successful auth, check if user has completed onboarding; if not, route to Onboarding Welcome; otherwise route to Home</li>
+        <li>Slack workspace restricts access to org members only</li>
+      </ul>
+      <div class="spec-note">The logo is a placeholder. Final brand asset to be substituted at a later stage.</div>
+    </div>
+  </div>
+
+
+  
+  <h2 id="onboarding">2 · Onboarding Flow</h2>
+  <p class="muted">Five sequential screens shown once after first login. A progress bar spans all steps. Users can go back freely but cannot skip allergen/restriction steps.</p>
+
+  
+  <div class="screen-wrap" style="margin-bottom:24px">
+    <div class="screen">
+      <div class="screen-label">Step 1 of 5</div>
+      <div class="screen-progress"><div class="screen-progress-fill" style="width:20%"></div></div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center;padding:8px 0">
+        <div class="screen-logo">Logo</div>
+        <div style="font-size:13px;font-weight:700">Welcome to Qubites</div>
+        <div style="font-size:10px;color:#57606a;line-height:1.5">Help reduce food waste on campus by sharing and claiming meals posted by your colleagues.</div>
+      </div>
+      <div class="screen-btn">Get Started</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Welcome Screen</h3>
+      <ul class="spec-list">
+        <li>Brief app pitch — one or two sentences explaining the purpose</li>
+        <li>Single <strong>Get Started</strong> button advances to allergen selection</li>
+        <li>No skip option — onboarding is required to set safety-critical allergen data</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <div class="screen-wrap" style="margin-bottom:24px">
+    <div class="screen">
+      <div class="screen-label">Step 2 of 5</div>
+      <div class="screen-progress"><div class="screen-progress-fill" style="width:40%"></div></div>
+      <div class="screen-title">Allergens</div>
+      <div class="screen-desc">Select all allergens that apply to you. You will be excluded from raffles for foods containing these — and gain +1 pity each time.</div>
+      <hr class="screen-divider" />
+      <div class="screen-check-row"><div class="chk checked">✓</div> Gluten</div>
+      <div class="screen-check-row"><div class="chk"></div> Dairy</div>
+      <div class="screen-check-row"><div class="chk checked">✓</div> Nuts</div>
+      <div class="screen-check-row"><div class="chk"></div> Eggs</div>
+      <div class="screen-check-row"><div class="chk"></div> Shellfish</div>
+      <div class="screen-check-row"><div class="chk"></div> Soy</div>
+      <div class="screen-check-row" style="color:#57606a;font-size:10px">+ more from allergens.txt…</div>
+      <div class="screen-btn" style="margin-top:8px">Next</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Allergens</h3>
+      <ul class="spec-list">
+        <li>Full checklist sourced from <code>allergens.txt</code></li>
+        <li>Subtitle: <em>"Select all allergens that apply to you. You will be excluded from raffles for foods with these tags and will receive +1 pity each time you are excluded."</em></li>
+        <li>Scrollable list if entries exceed visible area</li>
+        <li>None selected = no allergens (valid choice)</li>
+        <li>Selections saved to user profile; editable later in Profile tab</li>
+      </ul>
+      <div class="spec-note orange">Allergen data is safety-critical. Users should be clearly reminded they bear responsibility for their own choices.</div>
+    </div>
+  </div>
+
+  
+  <div class="screen-wrap" style="margin-bottom:24px">
+    <div class="screen">
+      <div class="screen-label">Step 3 of 5</div>
+      <div class="screen-progress"><div class="screen-progress-fill" style="width:60%"></div></div>
+      <div class="screen-title">Restrictions</div>
+      <div class="screen-desc">Select your dietary or cultural restrictions. You will be excluded from raffles for foods that don't comply — and gain +1 pity each time.</div>
+      <hr class="screen-divider" />
+      <div class="screen-check-row"><div class="chk checked">✓</div> Vegetarian</div>
+      <div class="screen-check-row"><div class="chk"></div> Vegan</div>
+      <div class="screen-check-row"><div class="chk"></div> Halal</div>
+      <div class="screen-check-row"><div class="chk"></div> Kosher</div>
+      <div class="screen-check-row"><div class="chk"></div> Gluten-Free</div>
+      <div class="screen-check-row" style="color:#57606a;font-size:10px">+ more from restrictions.txt…</div>
+      <div class="screen-btn" style="margin-top:8px">Next</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Restrictions</h3>
+      <ul class="spec-list">
+        <li>Full checklist sourced from <code>restrictions.txt</code></li>
+        <li>Subtitle: <em>"Select your dietary or cultural restrictions. You will be excluded from raffles for foods that don't meet these requirements and will receive +1 pity each time."</em></li>
+        <li>None selected = no restrictions (valid choice)</li>
+        <li>Editable later in Profile tab</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <div class="screen-wrap" style="margin-bottom:24px">
+    <div class="screen">
+      <div class="screen-label">Step 4 of 5</div>
+      <div class="screen-progress"><div class="screen-progress-fill" style="width:80%"></div></div>
+      <div class="screen-title">Preferences</div>
+      <div class="screen-desc">Pick food types you love. You'll get +1 bonus raffle ticket for listings that match your preferences.</div>
+      <hr class="screen-divider" />
+      <div class="screen-check-row"><div class="chk checked">✓</div> Italian</div>
+      <div class="screen-check-row"><div class="chk checked">✓</div> Pasta</div>
+      <div class="screen-check-row"><div class="chk"></div> Asian</div>
+      <div class="screen-check-row"><div class="chk"></div> Spicy</div>
+      <div class="screen-check-row"><div class="chk"></div> Dessert</div>
+      <div class="screen-check-row" style="color:#57606a;font-size:10px">+ more from preferences.txt…</div>
+      <div class="screen-btn" style="margin-top:8px">Next</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Preferences</h3>
+      <ul class="spec-list">
+        <li>Full checklist sourced from the preferences/cuisine tag list</li>
+        <li>Subtitle: <em>"Choose the types of food you enjoy. You'll receive +1 bonus raffle ticket for any listing that matches a preference."</em></li>
+        <li>No minimum or maximum selection enforced — zero preferences is valid</li>
+        <li>Editable later in Profile tab</li>
+      </ul>
+      <div class="spec-note green">Preferences only add upside; not selecting any is neutral — users receive only base raffles.</div>
+    </div>
+  </div>
+
+  
+  <div class="screen-wrap">
+    <div class="screen green-border">
+      <div class="screen-label">Step 5 of 5</div>
+      <div class="screen-progress"><div class="screen-progress-fill" style="width:100%;background:#2da44e"></div></div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center;padding:8px 0">
+        <div style="font-size:28px;color:#2da44e">✓</div>
+        <div style="font-size:13px;font-weight:700">You're all set!</div>
+        <div style="font-size:10px;color:#57606a;line-height:1.5">Your preferences have been saved. You can update them anytime from your profile.</div>
+      </div>
+      <div class="screen-btn green">Go to Home</div>
+    </div>
+    <div class="screen-detail">
+      <h3>Done Screen</h3>
+      <ul class="spec-list">
+        <li>Confirmation message: <em>"You're all set!"</em></li>
+        <li>Sub-copy: <em>"Your allergens, restrictions, and preferences have been saved. You can update them anytime from your profile."</em></li>
+        <li>Single CTA: <strong>Go to Home</strong> — routes to the Home tab</li>
+        <li>Onboarding flag set on user record so this flow is never shown again</li>
+      </ul>
+    </div>
+  </div>
+
+
+  
+  <h2 id="nav">3 · Bottom Navigation Bar</h2>
+
+  <div class="nav-bar">
+    <div class="nav-item active"><span class="nav-icon">⌂</span>Home</div>
+    <div class="nav-item add-btn"><span class="nav-icon" style="font-size:22px;font-weight:300">+</span>Add</div>
+    <div class="nav-item"><span class="nav-icon">◯</span>Profile</div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Tab</th><th>Icon</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Home</strong></td><td>House</td><td>Default landing tab. Shows personalised food feed.</td></tr>
+        <tr><td><strong>Add</strong></td><td>+ (prominent, accented)</td><td>Shows the Add tab with recent listings and a "New Listing" button. The + button in the nav is always visible and tappable regardless of active tab.</td></tr>
+        <tr><td><strong>Profile</strong></td><td>Person / avatar</td><td>User profile, allergen/restriction/preference editing, raffle stats, log out.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  
+  <h2 id="foodcard">4 · Food Card Component</h2>
+
+  
+  <div class="food-card">
+    <div class="food-card-img">[ Food photo ]</div>
+    <div class="food-card-body">
+      <div class="food-card-header">
+        <div class="food-card-title">Leftover Lasagna</div>
+        <div class="food-card-timer">1h 23m left</div>
+      </div>
+      <div class="food-card-meta">
+        <span class="food-card-tag type-leftover">Leftover</span>
+         ·  Floor 4 – Kitchen  ·  Posted 12 min ago  ·  7 / 10 portions
+      </div>
+      <div style="font-size:12px;color:#57606a;margin-bottom:6px">Homemade beef lasagna with ricotta. Still refrigerated.</div>
+      <div class="food-card-tags">
+        <span class="food-card-tag allergen">Gluten</span>
+        <span class="food-card-tag allergen">Dairy</span>
+        <span class="food-card-tag allergen">Eggs</span>
+        <span class="food-card-tag restriction">Contains Meat</span>
+        <span class="food-card-tag preference">Italian</span>
+        <span class="food-card-tag preference">Pasta</span>
+      </div>
+      <div class="food-card-footer">
+        <div class="food-card-slider-wrap">
+          <div class="food-card-slider-label">3 of 10 claimed</div>
+          <div class="food-card-slider"><div class="food-card-slider-fill" style="width:30%"></div></div>
+        </div>
+        <div class="claim-btn">Claim</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="food-card" style="opacity:.7">
+    <div class="food-card-img" style="background:#f0f1f3">[ Food photo ]</div>
+    <div class="food-card-body">
+      <div class="food-card-header">
+        <div class="food-card-title">Bagels &amp; Cream Cheese</div>
+        <div class="food-card-timer" style="color:#57606a">Fully claimed</div>
+      </div>
+      <div class="food-card-meta"><span class="food-card-tag type-free" style="border-color:#2da44e">Free Food</span>  ·  Floor 2 – Lounge</div>
+      <div class="food-card-footer">
+        <div class="food-card-slider-wrap">
+          <div class="food-card-slider-label" style="color:#57606a">12 of 12 claimed</div>
+          <div class="food-card-slider full"><div class="food-card-slider-fill" style="width:100%"></div></div>
+        </div>
+        <div class="claim-btn gray">Claimed</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="food-card">
+    <div class="food-card-img">[ Food photo ]</div>
+    <div class="food-card-body">
+      <div class="food-card-header">
+        <div class="food-card-title">Pasta Salad</div>
+        <div class="food-card-timer">45m left</div>
+      </div>
+      <div class="food-card-meta"><span class="food-card-tag type-leftover">Leftover</span>  ·  Floor 6 – Break Room</div>
+      <div class="food-card-footer">
+        <div class="food-card-slider-wrap">
+          <div class="food-card-slider-label">2 of 5 claimed</div>
+          <div class="food-card-slider"><div class="food-card-slider-fill" style="width:40%"></div></div>
+        </div>
+        <div class="copy-btn">Copy</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Food Card — All Fields</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Notes</th><th>Shown in Home</th><th>Shown in Add tab</th></tr></thead>
+      <tbody>
+        <tr><td>Food photo</td><td>Required upload; fills card header</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Title</td><td>Bold, prominent</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Type badge</td><td>Leftover (blue) / Free Food (green) / Other</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Location</td><td>Floor dropdown label</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Portions remaining</td><td>e.g. "7 / 10 portions"</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Description</td><td>Optional; truncated after 2 lines</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Allergen tags</td><td>Orange-tinted pills</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Restriction tags</td><td>Purple-tinted pills</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Preference tags</td><td>Green-tinted pills</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Time posted</td><td>Relative (e.g. "12 min ago")</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Countdown timer</td><td>Time until listing expires; turns orange under 30 min</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Claim progress slider</td><td>X of N claimed; grays out fully when all claimed</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td><strong>Claim button</strong></td><td>Visible only when user has been selected in raffle (or listing is open-access). Grayed out when fully claimed.</td><td>Yes</td><td>No</td></tr>
+        <tr><td><strong>Copy button</strong></td><td>Pre-fills the Add form with this card's data</td><td>No</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  
+  <h2 id="home">5 · Home Tab</h2>
+
+  <div class="screen-wrap">
+    <div class="screen" style="min-height:340px">
+      <div class="screen-label">Home</div>
+      <div class="screen-filter">
+        <div class="screen-filter-pill active">All</div>
+        <div class="screen-filter-pill">My Allergens</div>
+        <div class="screen-filter-pill">Restrictions</div>
+        <div class="screen-filter-pill">Prefs</div>
+      </div>
+      <hr class="screen-divider" />
+      
+      <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:6px">
+        <div style="height:36px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;color:#57606a">Photo</div>
+        <div style="padding:5px 7px">
+          <div style="font-size:11px;font-weight:700">Leftover Lasagna</div>
+          <div style="font-size:10px;color:#57606a">Floor 4 · 1h 23m left</div>
+          <div style="display:flex;gap:3px;margin:3px 0">
+            <span class="screen-tag allergen">Gluten</span>
+            <span class="screen-tag preference">Italian</span>
+          </div>
+          <div class="screen-slider"><div class="screen-slider-fill" style="width:30%"></div></div>
+        </div>
+      </div>
+      
+      <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden">
+        <div style="height:36px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;color:#57606a">Photo</div>
+        <div style="padding:5px 7px">
+          <div style="font-size:11px;font-weight:700">Free Bagels</div>
+          <div style="font-size:10px;color:#57606a">Floor 2 · 45m left</div>
+          <div style="display:flex;gap:3px;margin:3px 0">
+            <span class="screen-tag free">Free Food</span>
+          </div>
+          <div class="screen-slider"><div class="screen-slider-fill" style="width:60%"></div></div>
+        </div>
+      </div>
+      <div class="screen-nav">
+        <div class="screen-nav-item active"><div class="screen-nav-icon"></div>Home</div>
+        <div class="screen-nav-item" style="background:#3b82d4;color:#fff;border-radius:6px;padding:2px 8px;font-weight:700">+</div>
+        <div class="screen-nav-item"><div class="screen-nav-icon"></div>Profile</div>
+      </div>
+    </div>
+    <div class="screen-detail">
+      <h3>Feed &amp; Filtering</h3>
+      <ul class="spec-list">
+        <li>Default view (no filters active): shows only food the user can access — Free Food listings, raffled Leftover/Other listings the user won, and any listing entering the 15-min open window</li>
+        <li>Filter bar at top allows toggling: <strong>Hide my allergens</strong>, <strong>Abide by my restrictions</strong>, <strong>Match my preferences</strong></li>
+        <li>Filters are additive and override the default personalised view when active — useful for browsing on behalf of someone else</li>
+        <li>Feed is scrollable and updates in real time as listings are claimed or expire</li>
+        <li>Fully claimed or expired listings are hidden from the feed automatically</li>
+        <li>Free Food listings always appear at the top as they are open to all</li>
+      </ul>
+      <div class="spec-note">The Claim button on a card is only visible when the current user has been selected in the raffle (or the listing is open-access). Other users see only the progress slider.</div>
+    </div>
+  </div>
+
+
+  
+  <h2 id="add">6 · Add Tab &amp; Add Page</h2>
+
+  <div class="screen-wrap" style="margin-bottom:20px">
+    <div class="screen" style="min-height:340px">
+      <div class="screen-label">Add Tab</div>
+      <div class="screen-btn" style="margin-bottom:8px;text-align:center">+ New Listing</div>
+      <div style="font-size:10px;font-weight:700;color:#57606a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Your recent listings</div>
+      
+      <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;margin-bottom:6px">
+        <div style="height:36px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10px;color:#57606a">Photo</div>
+        <div style="padding:5px 7px">
+          <div style="font-size:11px;font-weight:700">Leftover Lasagna</div>
+          <div style="font-size:10px;color:#57606a">Floor 4 · Expired</div>
+          <div style="margin-top:4px;background:#eef4ff;border:1px solid #3b82d4;border-radius:4px;color:#3b82d4;font-size:10px;font-weight:700;padding:2px 6px;text-align:center">Copy</div>
+        </div>
+      </div>
+      <div class="screen-nav">
+        <div class="screen-nav-item"><div class="screen-nav-icon"></div>Home</div>
+        <div class="screen-nav-item" style="background:#3b82d4;color:#fff;border-radius:6px;padding:2px 8px;font-weight:700">+</div>
+        <div class="screen-nav-item"><div class="screen-nav-icon"></div>Profile</div>
+      </div>
+    </div>
+    <div class="screen-detail">
+      <h3>Add Tab</h3>
+      <ul class="spec-list">
+        <li><strong>+ New Listing</strong> button at the top opens the Add Page with a blank form</li>
+        <li>Below the button: a scrollable list of the current user's past and active listings, displayed as Food Cards with a <strong>Copy</strong> button instead of a Claim button</li>
+        <li>Tapping <strong>Copy</strong> opens the Add Page with all fields pre-populated from that listing — title, type, description, photo, tags, portions, location</li>
+        <li>The user can edit any pre-populated field before submitting as a new listing</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom:10px">Add Page — New Listing Form</h3>
+
+  <div class="card">
+    <h3>Step 1 – Basic Details</h3>
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:#57606a;margin-bottom:6px">Type *</div>
+      <div class="type-row">
+        <div class="type-pill selected-blue">
+          <div class="type-label">Leftover</div>
+          <div class="type-desc">Raffle · pity applies</div>
+        </div>
+        <div class="type-pill">
+          <div class="type-label">Free Food</div>
+          <div class="type-desc">Open · no pity</div>
+        </div>
+        <div class="type-pill">
+          <div class="type-label">Other</div>
+          <div class="type-desc">Raffle · pity applies</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="field"><label>Title *</label><div class="input-mock">Leftover Lasagna</div></div>
+      <div class="field"><label>Number of Portions *</label><div class="input-mock">10</div></div>
+      <div class="field"><label>Available Until *</label><div class="input-mock">Today, 3:30 PM ▾</div></div>
+      <div class="field"><label>Location (Floor) *</label><div class="input-mock">Floor 4 – Kitchen ▾</div></div>
+    </div>
+    <div class="field"><label>Description (optional)</label><div class="input-mock tall">Homemade beef lasagna with ricotta. Made last night, still refrigerated.</div></div>
+    <div class="upload-zone">
+      <div style="color:#3b82d4;font-size:20px;margin-bottom:4px">▲</div>
+      Drag &amp; drop a photo, or click to browse
+      <div class="muted" style="margin-top:4px">JPG, PNG · max 10 MB</div>
+    </div>
+    <div class="free-banner" style="display:none">
+      <strong>Free Food listing:</strong> All users are invited immediately. No raffle runs. No pity changes.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Step 2 – AI Tag Verification</h3>
+    <div class="ai-note">AI scanned your title and description and highlighted likely relevant tags. Please confirm each that applies — you are responsible for the accuracy of allergen and restriction tags.</div>
+    <div class="tag-group">
+      <div class="tag-group-name">Allergens</div>
+      <div class="tags-row">
+        <span class="tag ai-selected"><span class="tag-check">□</span> Gluten</span>
+        <span class="tag ai-selected"><span class="tag-check">□</span> Dairy</span>
+        <span class="tag ai-selected"><span class="tag-check">□</span> Eggs</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Nuts</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Shellfish</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Soy</span>
+      </div>
+    </div>
+    <div class="tag-group">
+      <div class="tag-group-name">Dietary Restrictions</div>
+      <div class="tags-row">
+        <span class="tag ai-selected"><span class="tag-check">□</span> Contains Meat</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Vegetarian</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Vegan</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Halal</span>
+      </div>
+    </div>
+    <div class="tag-group">
+      <div class="tag-group-name">Preferences / Cuisine</div>
+      <div class="tags-row">
+        <span class="tag ai-selected"><span class="tag-check">□</span> Italian</span>
+        <span class="tag ai-selected"><span class="tag-check">□</span> Pasta</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Asian</span>
+        <span class="tag grayed"><span class="tag-check">□</span> Spicy</span>
+      </div>
+    </div>
+    <div class="confirm-note">Click each tag you confirm as accurate. Confirmed tags turn green. AI suggestions that you leave unchecked will be discarded.</div>
+    <div style="margin-top:12px">
+      <h3 style="margin-bottom:6px">After confirmation:</h3>
+      <div class="tags-row">
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Gluten</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Dairy</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Eggs</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Contains Meat</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Italian</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Pasta</span>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px">Submit Listing</button>
+  </div>
+
+
+  
+  <h2 id="profile">7 · Profile Tab</h2>
+
+  <div class="screen-wrap">
+    <div class="screen purple-border" style="min-height:360px">
+      <div class="screen-label">Profile</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:30px;height:30px;border-radius:50%;background:#e5e7eb;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:12px;font-weight:700">Jane Smith</div>
+          <div style="font-size:10px;color:#57606a">jane@example.com</div>
+        </div>
+      </div>
+      <hr class="screen-divider" />
+      <div style="font-size:10px;font-weight:700;color:#57606a;text-transform:uppercase;margin:4px 0 2px">Raffle Stats</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <div style="flex:1;background:#f7f8fa;border:1px solid #e5e7eb;border-radius:6px;padding:5px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#3b82d4">3</div>
+          <div style="font-size:9px;color:#57606a">Base</div>
+        </div>
+        <div style="flex:1;background:#f7f8fa;border:1px solid #e5e7eb;border-radius:6px;padding:5px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#7c5cd8">4</div>
+          <div style="font-size:9px;color:#57606a">Pity</div>
+        </div>
+        <div style="flex:1;background:#f7f8fa;border:1px solid #e5e7eb;border-radius:6px;padding:5px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#2da44e">7</div>
+          <div style="font-size:9px;color:#57606a">Total</div>
+        </div>
+      </div>
+      <div class="screen-note green" style="margin-bottom:6px;font-size:10px">You have 1 preference match bonus active on the current listing.</div>
+      <hr class="screen-divider" />
+      <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3">✎ Edit Allergens</div>
+      <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3">✎ Edit Restrictions</div>
+      <div style="font-size:11px;padding:4px 0;border-bottom:1px solid #f0f1f3">✎ Edit Preferences</div>
+      <div style="font-size:11px;padding:4px 0;color:#cf222e">Sign Out</div>
+      <div class="screen-nav">
+        <div class="screen-nav-item"><div class="screen-nav-icon"></div>Home</div>
+        <div class="screen-nav-item" style="background:#3b82d4;color:#fff;border-radius:6px;padding:2px 8px;font-weight:700">+</div>
+        <div class="screen-nav-item active"><div class="screen-nav-icon"></div>Profile</div>
+      </div>
+    </div>
+    <div class="screen-detail">
+      <h3>Profile — Spec</h3>
+      <ul class="spec-list">
+        <li>Avatar and name pulled from Slack account; not editable in-app</li>
+        <li><strong>Raffle breakdown:</strong> Shows Base (always 3), current Pity total, and combined total tickets for the next raffle. If a preference match exists for a currently open listing, a bonus indicator is shown.</li>
+        <li><strong>Edit Allergens / Restrictions / Preferences:</strong> Each opens the same checklist UI from onboarding, pre-filled with current selections. Changes take effect on the next raffle wave.</li>
+        <li><strong>Sign Out:</strong> Clears session, returns to Login screen. Pity and preferences are persisted server-side.</li>
+      </ul>
+      <div class="spec-note">Pity is visible to the user so they can understand why they may or may not have been selected. It is not gameable — it only accumulates through genuine exclusions.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Raffle Stats Breakdown</h3>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">Base Raffles</div></div>
+      <div class="stat-box"><div class="stat-num purple">4</div><div class="stat-label">Pity Raffles</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:#2da44e">1</div><div class="stat-label">Preference Bonus*</div></div>
+      <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">Total (this listing)</div></div>
+    </div>
+    <p class="muted" style="font-size:12px">* Preference bonus is per-listing and only shown when the current listing matches a user preference. It is not stored as a standing value.</p>
+  </div>
+
+
+  
+  <h2 id="upload">8 · Upload Flow &amp; AI Tag Verification (Reference)</h2>
+  <p class="muted">The Add Page contains the full upload form described in Section 6. The following summarises the AI tag step for reference.</p>
+
+  <div class="card">
+    <h3>AI Tag Flow</h3>
+    <ul class="spec-list">
+      <li>On submit of Step 1 details, the title and optional description are sent to the AI model</li>
+      <li>AI returns a list of relevant tag IDs from the master tag list (allergens, restrictions, preferences)</li>
+      <li>These tags are surfaced at the top of each tag group, highlighted in blue, with unchecked checkboxes</li>
+      <li>All other tags in that group are grayed out but remain selectable</li>
+      <li>The uploader must personally check each tag they confirm — AI suggestions are not auto-confirmed</li>
+      <li>Checked tags turn green (confirmed). Unchecked AI suggestions and unselected gray tags are discarded</li>
+      <li>If the copy button was used, all previously confirmed tags are pre-checked and highlighted green — the uploader can uncheck or add tags</li>
+      <li>Submission is blocked until at least one allergen-group review has been performed (even if the result is zero allergens)</li>
+    </ul>
+  </div>
+
+
+  
+  <h2 id="raffle">9 · Raffle System &amp; Listing Types</h2>
+
+  <div class="formula">
+    <div class="eq">Total Raffles = 3 (base) + pity (accumulated) + 1 (if food matches a preference)</div>
+    <div class="note">Pity starts at 0. Resets to 0 whenever a user is selected — whether or not they claim the food. Free Food listings never affect pity.</div>
+  </div>
+
+  <div class="card">
+    <h3>Listing Type Comparison</h3>
+    <table>
+      <thead>
+        <tr><th>Behaviour</th><th class="col-raffle">Leftover / Other</th><th class="col-free">Free Food</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Access method</td><td>Raffle — winners notified in waves</td><td class="win">Open to everyone immediately</td></tr>
+        <tr><td>Allergen exclusions enforced</td><td>Yes</td><td class="neutral">No — tags shown for self-screening only</td></tr>
+        <tr><td>Restriction exclusions enforced</td><td>Yes</td><td class="neutral">No — tags shown for self-screening only</td></tr>
+        <tr><td>Pity gained on exclusion</td><td class="pity">+1 pity per listing</td><td class="win">No pity changes</td></tr>
+        <tr><td>Pity reset on selection</td><td class="excluded">Reset to 0 when offered</td><td class="win">No pity changes</td></tr>
+        <tr><td>5-minute re-raffle waves</td><td>Yes</td><td class="neutral">No — first-come, first-served</td></tr>
+        <tr><td>15-min expiry open access</td><td>Yes (allergen/restriction-safe users only)</td><td class="neutral">Already open — no change</td></tr>
+        <tr><td>AI tag verification required</td><td>Yes</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Raffle Rules</h3>
+    <table>
+      <thead><tr><th>Condition</th><th>Effect on User</th><th>Pity Change</th></tr></thead>
+      <tbody>
+        <tr><td>Food has allergen matching user's allergen</td><td class="excluded">Excluded from raffle</td><td class="pity">+1 pity</td></tr>
+        <tr><td>Food doesn't meet user's dietary restriction</td><td class="excluded">Excluded from raffle</td><td class="pity">+1 pity</td></tr>
+        <tr><td>Multiple exclusion reasons on same listing</td><td class="excluded">Excluded</td><td class="pity">+1 pity (capped at 1 per listing)</td></tr>
+        <tr><td>Food matches a user preference</td><td>Eligible + bonus</td><td class="win">+1 preference raffle (not stored)</td></tr>
+        <tr><td>User is selected (offered food)</td><td class="win">Notified, gets access</td><td class="excluded">Pity resets to 0</td></tr>
+        <tr><td>Listing type is Free Food</td><td class="win">All users get immediate open access</td><td class="win">No pity changes</td></tr>
+        <tr><td>Food expires in ≤ 15 min (Leftover/Other)</td><td>All safe users get open access</td><td class="neutral">No pity changes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  
+  <h2 id="distribution">10 · Distribution Timeline</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="card" style="margin-bottom:0">
+      <h3 style="color:#3b82d4;margin-bottom:10px">Leftover / Other</h3>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">T + 0 · Live</div><div class="tl-body">Raffle runs. N winners notified. Pity resets for selected users.</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-time">Every 5 min</div><div class="tl-body">Unclaimed slots re-enter pool. New raffle wave runs.</div></div>
+        <div class="tl-item"><div class="tl-dot orange"></div><div class="tl-time">T − 15 min</div><div class="tl-body">Open access for all safe users. No pity changes.</div></div>
+        <div class="tl-item"><div class="tl-dot green"></div><div class="tl-time">T · Expires</div><div class="tl-body">Listing archived. Remaining servings marked as waste.</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <h3 style="color:#2da44e;margin-bottom:10px">Free Food</h3>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot green"></div><div class="tl-time">T + 0 · Live</div><div class="tl-body">All users notified immediately. Open access — first-come, first-served. No raffle, no pity changes.</div></div>
+        <div class="tl-item"><div class="tl-dot green"></div><div class="tl-time">T · Expires</div><div class="tl-body">Listing archived. Remaining servings marked as waste. No pity changes.</div></div>
+      </div>
+    </div>
+  </div>
+
+
+  
+  <h2 id="edge">11 · Edge Cases &amp; Design Notes</h2>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Scenario</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td>Fewer eligible users than servings at initial raffle</td><td>All eligible users are selected. Remaining servings wait for the next 5-min wave.</td></tr>
+        <tr><td>User selected but never claims (Leftover/Other)</td><td>After 5 min, their access slot is released back into the pool. Pity remains at 0 (already reset on selection).</td></tr>
+        <tr><td>Multiple exclusion reasons on same listing</td><td>Only +1 pity per listing. Prevents pity inflation.</td></tr>
+        <tr><td>Free Food listing runs out quickly</td><td>Serving count hits 0. Listing closes. No pity changes for anyone.</td></tr>
+        <tr><td>Copy button used for Add form</td><td>All fields pre-populated including tags (pre-checked as confirmed). User can edit any field before submitting as a new listing.</td></tr>
+        <tr><td>User updates allergens/restrictions mid-day</td><td>Changes take effect on the next raffle wave — not retroactively on current open listings.</td></tr>
+        <tr><td>Uploader mis-tags allergens</td><td>Uploader bears responsibility (confirmed via checklist). A report mechanism is available to flag a listing.</td></tr>
+        <tr><td>User has no allergens/restrictions set</td><td>Eligible for all food. No exclusions, no pity from exclusions.</td></tr>
+        <tr><td>Free Food listing at 15-min expiry window</td><td>Already open to all — no behaviour change.</td></tr>
+        <tr><td>Servings = 0 before expiry timer</td><td>Listing closes immediately for all types. No further raffle waves.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+<footer>Made with IBM Bob</footer>
+</body>
+</html>

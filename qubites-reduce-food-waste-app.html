@@ -1,0 +1,710 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Qubites – App Concept</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 32px 0 10px; color: #1f2328; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #1f2328; }
+  p  { margin-bottom: 10px; color: #1f2328; }
+  .muted { color: #57606a; font-size: 13px; }
+
+  /* ── Hero ── */
+  .hero { margin-bottom: 28px; }
+  .hero .tagline { font-size: 13px; color: #57606a; margin-top: 2px; }
+  .badge {
+    display: inline-block;
+    background: #f0f4ff;
+    color: #3b82d4;
+    border: 1px solid #c7d8f8;
+    border-radius: 4px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+  .badge.green {
+    background: #eafaf0;
+    color: #2da44e;
+    border-color: #a8d5b5;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 520px) { .card-grid { grid-template-columns: 1fr; } }
+
+  /* ── Field mock ── */
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: #57606a; margin-bottom: 3px; }
+  .field .input-mock {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #57606a;
+  }
+  .field .input-mock.tall { min-height: 52px; }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2px dashed #d0d7de;
+    border-radius: 8px;
+    background: #fff;
+    text-align: center;
+    padding: 20px;
+    color: #57606a;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .upload-icon { font-size: 24px; margin-bottom: 4px; color: #3b82d4; }
+
+  /* ── Type selector ── */
+  .type-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .type-pill {
+    flex: 1;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+    background: #fff;
+    font-size: 13px;
+    color: #57606a;
+    cursor: default;
+  }
+  .type-pill.selected-blue {
+    border-color: #3b82d4;
+    background: #eef4ff;
+    color: #1f2328;
+    font-weight: 600;
+  }
+  .type-pill.selected-green {
+    border-color: #2da44e;
+    background: #eafaf0;
+    color: #1f2328;
+    font-weight: 600;
+  }
+  .type-pill .type-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .type-pill .type-desc { font-size: 11px; color: #57606a; }
+  .type-pill.selected-green .type-desc { color: #2da44e; }
+  .type-pill.selected-blue .type-desc { color: #3b82d4; }
+
+  /* ── Free food banner ── */
+  .free-banner {
+    background: #eafaf0;
+    border: 1px solid #a8d5b5;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #1f2328;
+    margin-bottom: 12px;
+  }
+  .free-banner strong { color: #2da44e; }
+
+  /* ── Tags ── */
+  .tags-section { margin-top: 12px; }
+  .tag-group { margin-bottom: 10px; }
+  .tag-group-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #57606a; margin-bottom: 5px; }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    display: flex; align-items: center; gap: 5px;
+    border: 1px solid #d0d7de;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 12px;
+    cursor: default;
+    background: #fff;
+    color: #1f2328;
+  }
+  .tag.ai-selected {
+    border-color: #3b82d4;
+    background: #eef4ff;
+    color: #1f2328;
+    font-weight: 600;
+  }
+  .tag.ai-selected .tag-check { color: #3b82d4; font-weight: 700; }
+  .tag.grayed { color: #b0b8c1; border-color: #e5e7eb; background: #f7f8fa; }
+  .tag.user-confirmed {
+    border-color: #2da44e;
+    background: #eafaf0;
+    color: #1f2328;
+    font-weight: 600;
+  }
+  .tag.user-confirmed .tag-check { color: #2da44e; font-weight: 700; }
+  .tag-check { font-size: 11px; }
+  .ai-note {
+    font-size: 12px;
+    color: #57606a;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background: #eef4ff;
+    border-left: 3px solid #3b82d4;
+    border-radius: 0 4px 4px 0;
+  }
+  .confirm-note {
+    font-size: 12px;
+    color: #57606a;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #eafaf0;
+    border-left: 3px solid #2da44e;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── Step list ── */
+  .steps { list-style: none; padding: 0; }
+  .steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f1f3;
+  }
+  .steps li:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+  .step-num.green { background: #2da44e; }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .step-desc { font-size: 13px; color: #57606a; }
+
+  /* ── Comparison table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f0f1f3; font-weight: 600; padding: 7px 10px; text-align: left; border: 1px solid #e5e7eb; }
+  td { padding: 7px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .win { color: #2da44e; font-weight: 600; }
+  .excluded { color: #cf222e; font-weight: 600; }
+  .pity { color: #7c5cd8; }
+  .neutral { color: #57606a; }
+  th.col-raffle { background: #eef4ff; color: #3b82d4; }
+  th.col-free   { background: #eafaf0; color: #2da44e; }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: #e5e7eb; }
+  .tl-item { position: relative; margin-bottom: 14px; }
+  .tl-dot {
+    position: absolute; left: -20px; top: 4px;
+    width: 10px; height: 10px;
+    border-radius: 50%; background: #3b82d4; border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #3b82d4;
+  }
+  .tl-dot.orange { background: #e85d04; box-shadow: 0 0 0 2px #e85d04; }
+  .tl-dot.green  { background: #2da44e; box-shadow: 0 0 0 2px #2da44e; }
+  .tl-time { font-size: 11px; font-weight: 700; color: #57606a; text-transform: uppercase; margin-bottom: 2px; }
+  .tl-body { font-size: 13px; }
+
+  /* ── Formula box ── */
+  .formula {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .formula .eq { font-family: "SFMono-Regular", Consolas, monospace; color: #1f2328; font-size: 13px; }
+  .formula .note { font-size: 12px; color: #57606a; margin-top: 4px; }
+
+  /* ── CTA button mock ── */
+  .btn {
+    display: inline-block;
+    background: #3b82d4;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    margin-top: 8px;
+    cursor: default;
+  }
+  .btn.green { background: #2da44e; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="hero">
+    <h1>Qubites</h1>
+    <div class="tagline muted">AI-assisted food-sharing platform · concept spec &amp; UI reference</div>
+    <div style="margin-top:10px">
+      <span class="badge">Upload Flow</span>
+      <span class="badge">AI Tag Verification</span>
+      <span class="badge">Raffle System</span>
+      <span class="badge green">Free Food Type</span>
+      <span class="badge">Live Distribution</span>
+    </div>
+  </div>
+
+  
+  <h2>1 · Upload Flow (Uploader)</h2>
+
+  <div class="card">
+    <h3>Step 1 – Basic Details</h3>
+
+    
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:#57606a;margin-bottom:6px">Type *</div>
+      <div class="type-row">
+        <div class="type-pill selected-blue">
+          <div class="type-label">Leftover</div>
+          <div class="type-desc">Raffle access · pity applies</div>
+        </div>
+        <div class="type-pill">
+          <div class="type-label">Free Food</div>
+          <div class="type-desc">Open to all · no pity changes</div>
+        </div>
+        <div class="type-pill">
+          <div class="type-label">Other</div>
+          <div class="type-desc">Raffle access · pity applies</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="field">
+        <label>Title *</label>
+        <div class="input-mock">Leftover Lasagna</div>
+      </div>
+      <div class="field">
+        <label>Number of Portions *</label>
+        <div class="input-mock">10</div>
+      </div>
+      <div class="field">
+        <label>Available Until *</label>
+        <div class="input-mock">Today, 3:30 PM ▾</div>
+      </div>
+      <div class="field">
+        <label>Location (Floor) *</label>
+        <div class="input-mock">Floor 4 – Kitchen ▾</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Description (optional)</label>
+      <div class="input-mock tall">Homemade beef lasagna with ricotta. Made last night, still refrigerated.</div>
+    </div>
+    <div class="upload-zone">
+      <div class="upload-icon">▲</div>
+      <div>Drag &amp; drop a photo, or click to browse</div>
+      <div class="muted" style="margin-top:4px">JPG, PNG · max 10 MB</div>
+    </div>
+  </div>
+
+  
+  <div class="card">
+    <h3>Type = "Free Food" — what changes</h3>
+    <div class="free-banner">
+      <strong>Free Food listing:</strong> All users are invited immediately when the listing goes live.
+      No raffle runs. No pity is gained or lost for anyone on this listing.
+      Allergen and restriction tags are still shown so users can make informed decisions, but exclusions are not enforced.
+    </div>
+
+    
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:#57606a;margin-bottom:6px">Type *</div>
+      <div class="type-row">
+        <div class="type-pill">
+          <div class="type-label">Leftover</div>
+          <div class="type-desc">Raffle access · pity applies</div>
+        </div>
+        <div class="type-pill selected-green">
+          <div class="type-label">Free Food</div>
+          <div class="type-desc">Open to all · no pity changes</div>
+        </div>
+        <div class="type-pill">
+          <div class="type-label">Other</div>
+          <div class="type-desc">Raffle access · pity applies</div>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:4px;font-size:12px">
+      Tags are still required so users with allergens can self-screen. The uploader must complete the same AI tag verification checklist.
+    </p>
+  </div>
+
+  
+  <div class="card">
+    <h3>Step 2 – AI Tag Verification (all types)</h3>
+    <div class="ai-note">
+      AI scanned your title and description and highlighted likely relevant tags below.
+      Tags it flagged are shown at the top. Please verify by checking each one that applies.
+    </div>
+
+    <div class="tags-section">
+      <div class="tag-group">
+        <div class="tag-group-name">Allergens</div>
+        <div class="tags-row">
+          <span class="tag ai-selected"><span class="tag-check">□</span> Gluten</span>
+          <span class="tag ai-selected"><span class="tag-check">□</span> Dairy</span>
+          <span class="tag ai-selected"><span class="tag-check">□</span> Eggs</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Nuts</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Shellfish</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Soy</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Fish</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Sesame</span>
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-group-name">Dietary Restrictions</div>
+        <div class="tags-row">
+          <span class="tag ai-selected"><span class="tag-check">□</span> Contains Meat</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Vegetarian</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Vegan</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Halal</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Kosher</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Gluten-Free</span>
+        </div>
+      </div>
+      <div class="tag-group">
+        <div class="tag-group-name">Preferences / Cuisine</div>
+        <div class="tags-row">
+          <span class="tag ai-selected"><span class="tag-check">□</span> Italian</span>
+          <span class="tag ai-selected"><span class="tag-check">□</span> Pasta</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Asian</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Spicy</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Dessert</span>
+          <span class="tag grayed"><span class="tag-check">□</span> Vegan-Friendly</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="confirm-note">
+      After reviewing, click each tag you confirm as accurate. Tags you confirm turn green.
+      You are responsible for the accuracy of allergen and restriction tags.
+    </div>
+
+    <div style="margin-top:14px">
+      <h3 style="margin-bottom:8px">After uploader confirms:</h3>
+      <div class="tags-row">
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Gluten</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Dairy</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Eggs</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Contains Meat</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Italian</span>
+        <span class="tag user-confirmed"><span class="tag-check">✓</span> Pasta</span>
+      </div>
+    </div>
+
+    <button class="btn" style="margin-top:16px">Submit Listing</button>
+  </div>
+
+
+  
+  <h2>2 · Listing Type Comparison</h2>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Behaviour</th>
+          <th class="col-raffle">Leftover / Other</th>
+          <th class="col-free">Free Food</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Access method</td>
+          <td>Raffle — winners notified in waves</td>
+          <td class="win">Open to everyone immediately</td>
+        </tr>
+        <tr>
+          <td>Allergen exclusions enforced</td>
+          <td>Yes — excluded users cannot enter raffle</td>
+          <td class="neutral">No — tags shown for self-screening only</td>
+        </tr>
+        <tr>
+          <td>Restriction exclusions enforced</td>
+          <td>Yes — excluded users cannot enter raffle</td>
+          <td class="neutral">No — tags shown for self-screening only</td>
+        </tr>
+        <tr>
+          <td>Pity gained on exclusion</td>
+          <td class="pity">+1 pity per listing</td>
+          <td class="win">No pity changes</td>
+        </tr>
+        <tr>
+          <td>Pity reset on selection</td>
+          <td class="excluded">Reset to 0 when offered</td>
+          <td class="win">No pity changes</td>
+        </tr>
+        <tr>
+          <td>5-minute re-raffle waves</td>
+          <td>Yes</td>
+          <td class="neutral">No — first-come, first-served throughout</td>
+        </tr>
+        <tr>
+          <td>15-min expiry open access</td>
+          <td>Yes (allergen/restriction-safe users only)</td>
+          <td class="neutral">Already open — no change</td>
+        </tr>
+        <tr>
+          <td>AI tag verification required</td>
+          <td>Yes</td>
+          <td>Yes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  
+  <h2>3 · Raffle System (Leftover / Other types only)</h2>
+
+  <div class="formula">
+    <div class="eq">Total Raffles = 3 (base) + pity (accumulated) + 1 (if food matches a preference)</div>
+    <div class="note">Pity starts at 0. Resets to 0 whenever a user is selected — whether or not they claim the food. Free Food listings never affect pity.</div>
+  </div>
+
+  <div class="card">
+    <h3>Raffle Rules Summary</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Condition</th>
+          <th>Effect on User</th>
+          <th>Pity Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Food has allergen matching user's listed allergen</td>
+          <td class="excluded">Excluded from raffle</td>
+          <td class="pity">+1 pity</td>
+        </tr>
+        <tr>
+          <td>Food does not match user's dietary restriction (e.g., user is vegetarian, food has meat)</td>
+          <td class="excluded">Excluded from raffle</td>
+          <td class="pity">+1 pity</td>
+        </tr>
+        <tr>
+          <td>Food matches a user preference (e.g., cuisine type, tag)</td>
+          <td>Eligible + bonus</td>
+          <td class="win">+1 preference raffle</td>
+        </tr>
+        <tr>
+          <td>User is selected (offered food) — regardless of whether they claim it</td>
+          <td class="win">Notified, gets access</td>
+          <td class="excluded">Pity resets to 0</td>
+        </tr>
+        <tr>
+          <td>Listing type is Free Food</td>
+          <td class="win">All users get immediate open access</td>
+          <td class="win">No pity changes</td>
+        </tr>
+        <tr>
+          <td>Food expires in ≤ 15 minutes (Leftover / Other)</td>
+          <td>All allergen/restriction-safe users get open access</td>
+          <td class="neutral">No pity changes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Example: 10-Portion Lasagna (Leftover) · 8 Eligible Users</h3>
+    <table>
+      <thead>
+        <tr><th>User</th><th>Base</th><th>Pity</th><th>Pref</th><th>Total Tickets</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Alice</td><td>3</td><td>2</td><td>1 (Italian)</td><td><strong>6</strong></td><td class="win">Selected → pity reset</td></tr>
+        <tr><td>Bob</td><td>3</td><td>0</td><td>1 (Pasta)</td><td><strong>4</strong></td><td class="win">Selected → pity reset</td></tr>
+        <tr><td>Carol</td><td>3</td><td>4</td><td>0</td><td><strong>7</strong></td><td class="win">Selected → pity reset</td></tr>
+        <tr><td>David</td><td>3</td><td>0</td><td>0</td><td><strong>3</strong></td><td>Not selected (pity unchanged)</td></tr>
+        <tr><td>Eve</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="excluded">Excluded (Gluten) · +1 pity</td></tr>
+        <tr><td>Frank</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="excluded">Excluded (Vegetarian) · +1 pity</td></tr>
+        <tr><td>Grace</td><td>3</td><td>1</td><td>0</td><td><strong>4</strong></td><td class="win">Selected → pity reset</td></tr>
+        <tr><td>Hank</td><td>3</td><td>0</td><td>0</td><td><strong>3</strong></td><td>Not selected (pity unchanged)</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:8px">
+      If this were a <strong>Free Food</strong> listing, all 8 users (including Eve and Frank) would have immediate open access and no pity would change for anyone.
+    </p>
+  </div>
+
+
+  
+  <h2>4 · Distribution Timeline</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+
+    <div class="card" style="margin-bottom:0">
+      <h3 style="color:#3b82d4;margin-bottom:10px">Leftover / Other</h3>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">T + 0 · Live</div>
+          <div class="tl-body">Raffle runs. N winners notified. Pity resets for selected users.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">Every 5 min</div>
+          <div class="tl-body">Unclaimed slots re-enter pool. New raffle wave runs.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot orange"></div>
+          <div class="tl-time">T − 15 min</div>
+          <div class="tl-body">Open access for all allergen/restriction-safe users. No pity changes.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">T · Expires</div>
+          <div class="tl-body">Listing archived. Remaining servings marked as waste.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <h3 style="color:#2da44e;margin-bottom:10px">Free Food</h3>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">T + 0 · Live</div>
+          <div class="tl-body">All users notified immediately. Open access — first-come, first-served. No raffle, no pity changes.</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green"></div>
+          <div class="tl-time">T · Expires</div>
+          <div class="tl-body">Listing archived. Remaining servings marked as waste. No pity changes.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  
+  <h2>5 · Recipient Claiming Flow</h2>
+
+  <ul class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Notification received</div>
+        <div class="step-desc">
+          <strong>Leftover/Other:</strong> "You've been selected for Leftover Lasagna – Floor 4. Available until 3:30 PM." Pity resets to 0 now.<br />
+          <strong>Free Food:</strong> "Free Food available – Bagels – Floor 2 Lounge. First-come, first-served."
+        </div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">View listing</div>
+        <div class="step-desc">User sees full listing: title, photo, description, confirmed tags, floor, time remaining, and a Claim button.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Go pick up food</div>
+        <div class="step-desc">User physically goes to the listed floor/location to retrieve their portion.</div>
+      </div>
+    </li>
+    <li>
+      <div class="step-num green">4</div>
+      <div class="step-body">
+        <div class="step-title">Tap "Claimed"</div>
+        <div class="step-desc">Serving count decreases by 1. Listing updates in real time. For Leftover/Other, pity was already reset at selection. For Free Food, no pity effect at any point.</div>
+      </div>
+    </li>
+  </ul>
+
+
+  
+  <h2>6 · Edge Cases &amp; Design Notes</h2>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Scenario</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Fewer eligible users than servings at initial raffle</td>
+          <td>All eligible users are selected. Remaining servings wait for the next 5-min wave.</td>
+        </tr>
+        <tr>
+          <td>User selected but never claims (Leftover/Other)</td>
+          <td>After 5 min, their access slot is released back into the pool. Pity remains at 0 (already reset on selection).</td>
+        </tr>
+        <tr>
+          <td>Multiple exclusions in same wave (allergen + restriction)</td>
+          <td>Only +1 pity per listing, not +2. Prevents pity inflation from a single food post.</td>
+        </tr>
+        <tr>
+          <td>Free Food listing runs out quickly</td>
+          <td>Serving count hits 0. Listing closes. No pity changes for anyone regardless.</td>
+        </tr>
+        <tr>
+          <td>Uploader mis-tags allergens</td>
+          <td>Uploader bears responsibility (confirmed via checklist). Report mechanism available to flag a listing.</td>
+        </tr>
+        <tr>
+          <td>User profile has no allergens/restrictions set</td>
+          <td>Treated as no restrictions. Eligible for all food. No exclusions, no pity from exclusions.</td>
+        </tr>
+        <tr>
+          <td>Free Food listing reaches 15-min expiry window</td>
+          <td>Already open to all — no behaviour change at 15 minutes.</td>
+        </tr>
+        <tr>
+          <td>Servings = 0 before expiry timer</td>
+          <td>Listing closes immediately for all types. No further raffle waves.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>Made with IBM Bob</footer>
+</body>
+</html>
