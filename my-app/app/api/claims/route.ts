@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase'
+import { supabase as serviceSupabase } from '@/lib/supabase'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -10,8 +10,16 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(
+          cookiesToSet: Array<{
+            name: string
+            value: string
+            options: Parameters<typeof cookieStore.set>[2]
+          }>
+        ) {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)
           )
@@ -30,7 +38,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'meal_window_id is required' }, { status: 400 })
   }
 
-  const serviceSupabase = createClient()
   const { error } = await serviceSupabase
     .from('claims')
     .insert({

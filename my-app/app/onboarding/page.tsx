@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 
@@ -13,52 +13,124 @@ import DoneStep from '../components/onboarding/DoneStep'
 
 const TOTAL_STEPS = 5
 
+type UserProfile = {
+  id: string
+  cuisines: string[]
+  dietaryRestrictions: string[]
+  allergies: string[]
+}
+
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   // Selections for each checklist step
   const [allergens, setAllergens] = useState<Set<string>>(new Set())
   const [restrictions, setRestrictions] = useState<Set<string>>(new Set())
   const [preferences, setPreferences] = useState<Set<string>>(new Set())
 
+  useEffect(() => {
+    async function loadUserProfile() {
+      try {
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          router.replace('/login')
+          return
+        }
+
+        const slackId = user.user_metadata?.slack_id
+        if (!slackId) {
+          router.replace('/login')
+          return
+        }
+
+        const response = await fetch('/api/users')
+        if (!response.ok) {
+          throw new Error('Failed to load user profile.')
+        }
+
+        const users = (await response.json()) as Array<{
+          id: string
+          slackId: string
+          cuisines: string[]
+          dietaryRestrictions: string[]
+          allergies: string[]
+        }>
+
+        const currentUser = users.find((candidate) => candidate.slackId === slackId)
+
+        if (!currentUser) {
+          throw new Error('User profile not found.')
+        }
+
+        setUserProfile({
+          id: currentUser.id,
+          cuisines: currentUser.cuisines,
+          dietaryRestrictions: currentUser.dietaryRestrictions,
+          allergies: currentUser.allergies,
+        })
+        setPreferences(new Set(currentUser.cuisines))
+        setRestrictions(new Set(currentUser.dietaryRestrictions))
+        setAllergens(new Set(currentUser.allergies))
+      } catch (err) {
+        console.error('[onboarding] Failed to load profile:', err)
+      } finally {
+        setLoadingProfile(false)
+      }
+    }
+
+    loadUserProfile()
+  }, [router])
+
   function next() {
     setStep((s) => s + 1)
   }
 
   async function finish() {
+    if (!userProfile) {
+      return
+    }
+
     setSaving(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const response = await fetch(`/api/users/${userProfile.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cuisines: Array.from(preferences),
+          dietaryRestrictions: Array.from(restrictions),
+          allergies: Array.from(allergens),
+        }),
+      })
 
-      if (user) {
-        const slackId =
-          user.user_metadata?.slack_id ??
-          // fallback: look up by email in the users table via the API
-          null
-
-        await fetch('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slackId,
-            name: user.user_metadata?.name ?? null,
-            role: 'employee',
-            cuisines: Array.from(preferences),
-            dietaryRestrictions: Array.from(restrictions),
-            allergies: Array.from(allergens),
-          }),
-        })
+      if (!response.ok) {
+        throw new Error('Failed to save onboarding preferences.')
       }
     } catch (err) {
-      // Non-fatal: user still proceeds; preferences can be set later in profile.
       console.error('[onboarding] Failed to save preferences:', err)
+      return
     } finally {
       setSaving(false)
-      router.push('/home')
     }
+
+    router.push('/home')
+  }
+
+  if (loadingProfile) {
+    return (
+      <OnboardingLayout step={step} totalSteps={TOTAL_STEPS}>
+        <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white px-6 py-10 text-center text-sm text-gray-500 shadow-sm">
+          Loading your profile…
+        </div>
+      </OnboardingLayout>
+    )
   }
 
   return (

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { createClient } from '@/lib/supabase-browser'
 import { allergyColumns, dietaryRestrictionColumns, cuisineColumns } from '@/lib/preferences'
-import { MOCK_USER } from '@/app/components/food/fixtures'
 import RaffleStats from '@/app/components/profile/RaffleStats'
 import PreferenceEditor from '@/app/components/profile/PreferenceEditor'
 
@@ -89,25 +89,141 @@ function EditRow({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+type ProfileUser = {
+  id: string
+  name: string
+  email: string
+  allergens: string[]
+  restrictions: string[]
+  preferences: string[]
+  pity: number
+  baseTickets: number
+}
+
 export default function ProfilePage() {
   const router = useRouter()
-
-  // TODO: replace with real user data from auth when wired up
-  const [user, setUser] = useState(MOCK_USER)
+  const [user, setUser] = useState<ProfileUser | null>(null)
+  const [loading, setLoading] = useState(true)
   const [openEditor, setOpenEditor] = useState<OpenEditor>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const supabase = createClient()
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
+
+        if (!authUser) {
+          router.replace('/login')
+          return
+        }
+
+        const slackId = authUser.user_metadata?.slack_id
+        if (!slackId) {
+          router.replace('/login')
+          return
+        }
+
+        const response = await fetch('/api/users')
+        if (!response.ok) {
+          throw new Error('Failed to load profile.')
+        }
+
+        const users = (await response.json()) as Array<{
+          id: string
+          slackId: string
+          name: string | null
+          cuisines: string[]
+          dietaryRestrictions: string[]
+          allergies: string[]
+        }>
+
+        const currentUser = users.find((candidate) => candidate.slackId === slackId)
+        if (!currentUser) {
+          throw new Error('User profile not found.')
+        }
+
+        setUser({
+          id: currentUser.id,
+          name: currentUser.name ?? authUser.user_metadata?.name ?? authUser.email ?? 'User',
+          email: authUser.email ?? `${slackId}@slack.local`,
+          allergens: currentUser.allergies,
+          restrictions: currentUser.dietaryRestrictions,
+          preferences: currentUser.cuisines,
+          pity: 0,
+          baseTickets: 3,
+        })
+      } catch (err) {
+        console.error('[profile] Failed to load profile:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, [router])
 
   function toggleEditor(key: OpenEditor) {
     setOpenEditor(prev => (prev === key ? null : key))
   }
 
-  function handleSave(key: 'allergens' | 'restrictions' | 'preferences', next: string[]) {
-    setUser(prev => ({ ...prev, [key]: next }))
-    setOpenEditor(null)
+  async function handleSave(key: 'allergens' | 'restrictions' | 'preferences', next: string[]) {
+    if (!user) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          allergies: key === 'allergens' ? next : user.allergens,
+          dietaryRestrictions: key === 'restrictions' ? next : user.restrictions,
+          cuisines: key === 'preferences' ? next : user.preferences,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile preferences.')
+      }
+
+      const updatedUser = (await response.json()) as {
+        allergies: string[]
+        dietaryRestrictions: string[]
+        cuisines: string[]
+      }
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              allergens: updatedUser.allergies,
+              restrictions: updatedUser.dietaryRestrictions,
+              preferences: updatedUser.cuisines,
+            }
+          : prev
+      )
+      setOpenEditor(null)
+    } catch (err) {
+      console.error('[profile] Failed to save preferences:', err)
+    }
   }
 
-  function handleSignOut() {
-    // TODO: call supabase.auth.signOut() when auth is wired up
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  if (loading || !user) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-6 sm:py-8">
+        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500 shadow-sm">
+          Loading profile…
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -154,7 +270,7 @@ export default function ProfilePage() {
               saved={user.allergens}
               accentBg="bg-orange-500"
               accentBorder="border-orange-500"
-              onSave={next => handleSave('allergens', next)}
+              onSave={next => void handleSave('allergens', next)}
               onCancel={() => setOpenEditor(null)}
             />
           )}
@@ -175,7 +291,7 @@ export default function ProfilePage() {
               saved={user.restrictions}
               accentBg="bg-purple-500"
               accentBorder="border-purple-500"
-              onSave={next => handleSave('restrictions', next)}
+              onSave={next => void handleSave('restrictions', next)}
               onCancel={() => setOpenEditor(null)}
             />
           )}
@@ -196,7 +312,7 @@ export default function ProfilePage() {
               saved={user.preferences}
               accentBg="bg-green-500"
               accentBorder="border-green-500"
-              onSave={next => handleSave('preferences', next)}
+              onSave={next => void handleSave('preferences', next)}
               onCancel={() => setOpenEditor(null)}
             />
           )}

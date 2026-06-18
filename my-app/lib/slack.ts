@@ -1,9 +1,5 @@
 const slackBotToken = process.env.SLACK_BOT_TOKEN;
 
-if (!slackBotToken) {
-  throw new Error("Missing SLACK_BOT_TOKEN environment variable.");
-}
-
 type SlackOpenConversationResponse = {
   ok: boolean;
   error?: string;
@@ -22,6 +18,10 @@ async function slackApiRequest<T>(endpoint: string, body: Record<string, unknown
     endpoint,
     body,
   });
+
+  if (!slackBotToken) {
+    throw new Error("Missing SLACK_BOT_TOKEN environment variable.");
+  }
 
   const response = await fetch(`https://slack.com/api/${endpoint}`, {
     method: "POST",

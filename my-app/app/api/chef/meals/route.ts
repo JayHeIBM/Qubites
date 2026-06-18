@@ -1,8 +1,7 @@
-import { createClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = createClient()
 
   const { data: meals, error } = await supabase
     .from('meal_windows')
@@ -28,8 +27,6 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient()
-
   const formData = await request.formData()
   const name = formData.get('name') as string
   const description = formData.get('description') as string
