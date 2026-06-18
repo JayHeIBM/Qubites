@@ -176,8 +176,8 @@ export default function FoodCard({ listing, onClaim, onCopy }: FoodCardProps) {
           </div>
         )}
 
-        {/* Footer: progress bar + action button */}
-        <div className="flex items-center gap-3 pt-1">
+        {/* Footer: progress bar + action button — pinned to bottom */}
+        <div className="flex items-center gap-3 pt-1 mt-auto">
           <ProgressBar total={portionsTotal} claimed={portionsClaimed} />
 
           {showCopy ? (
