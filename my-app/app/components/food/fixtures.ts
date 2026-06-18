@@ -10,12 +10,16 @@ const mins = (n: number) => n * 60 * 1000
 export const MOCK_USER = {
   name: 'Jane Smith',
   email: 'jane@example.com',
-  /** Allergen labels matching the `allergen` kind tags on listings */
-  allergens: ['Gluten', 'Nuts'],
-  /** Restriction labels matching the `restriction` kind tags on listings */
-  restrictions: ['Vegetarian'],
-  /** Preference labels matching the `preference` kind tags on listings */
-  preferences: ['Italian', 'Pasta', 'Mediterranean'],
+  /** Allergen keys matching allergyColumns in lib/preferences.ts */
+  allergens: ['gluten', 'tree_nut'],
+  /** Restriction keys matching dietaryRestrictionColumns */
+  restrictions: ['vegetarian'],
+  /** Cuisine/preference keys matching cuisineColumns */
+  preferences: ['italian', 'mediterranean'],
+  /** Accumulated pity from raffle exclusions. Resets to 0 on selection. */
+  pity: 4,
+  /** Base raffle tickets — always 3 per the design doc */
+  baseTickets: 3,
 }
 
 /**
