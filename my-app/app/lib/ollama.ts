@@ -2,20 +2,20 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const ollamaUrl = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
-const modelId = process.env.OLLAMA_MODEL || "qwen2.5:7b";
+const modelId = process.env.OLLAMA_MODEL || "llama3.1:8b";
 
 type FoodTaggingInput = {
   foodName: string;
   description?: string;
 };
 
-class WatsonxTaggingError extends Error {
+class OllamaTaggingError extends Error {
   constructor(
     message: string,
-    public readonly watsonxOutput: string
+    public readonly ollamaOutput: string
   ) {
     super(message);
-    this.name = "WatsonxTaggingError";
+    this.name = "OllamaTaggingError";
   }
 }
 
@@ -63,23 +63,43 @@ function buildFoodTaggingPrompt(
     "Do not write sentences.",
     "Do not explain your reasoning.",
     "Do not use markdown.",
-    "If you are uncertain, return empty arrays for the uncertain categories.",
     "Required output shape:",
     '{"allergens":[],"restrictions":[],"cuisines":[]}',
-    "Example valid output:",
-    '{"allergens":["soy"],"restrictions":["vegetarian","vegan","plant_based"],"cuisines":[]}',
+
+    "Classification goal:",
+    "- These tags are suggestions, so prefer including likely relevant tags rather than missing them.",
+    "- If a tag is reasonably supported by the food name or description, include it.",
+    "- Use common culinary knowledge when the food strongly implies ingredients, dietary patterns, or cuisine.",
+    "- Only leave a category empty when there is little or no reasonable evidence.",
+
+    "Category guidance:",
+    "- allergens: include allergens that are explicit or reasonably implied by the dish or its common ingredients.",
+    "- restrictions: include dietary or cultural tags that are likely compatible with the dish, unless contradicted.",
+    "- cuisines: include cuisines that are reasonably associated with the dish name or description.",
+
+    "Examples:",
+    'Input: Food name: Fried Tofu | Description:',
+    'Output: {"allergens":["soy"],"restrictions":["vegetarian","vegan","plant_based"],"cuisines":["chinese"]}',
+
+    'Input: Food name: Chicken Tikka Masala | Description: Creamy tomato curry with chicken and yogurt',
+    'Output: {"allergens":["dairy"],"restrictions":[],"cuisines":["indian"]}',
+
+    'Input: Food name: Cheese Pizza | Description:',
+    'Output: {"allergens":["dairy","gluten"],"restrictions":["vegetarian"],"cuisines":["italian"]}',
+
     "Rules:",
     "- Only use tags from the provided allowed lists.",
     "- Include only relevant tags.",
     "- Order tags in each list from most relevant to least relevant.",
-    "- If no tags are relevant for a category, return an empty array.",
     "- Do not include any keys other than allergens, restrictions, and cuisines.",
+
     "Allowed allergens:",
     taxonomy.allergens.join(", "),
     "Allowed restrictions:",
     taxonomy.restrictions.join(", "),
     "Allowed cuisines:",
     taxonomy.cuisines.join(", "),
+
     `Food name: ${input.foodName}`,
     `Description: ${input.description?.trim() || ""}`,
   ].join("\n");
@@ -90,7 +110,7 @@ function extractJsonObject(content: string) {
   const end = content.lastIndexOf("}");
 
   if (start === -1 || end === -1 || end < start) {
-    throw new WatsonxTaggingError(
+    throw new OllamaTaggingError(
       "The local model did not return a JSON object.",
       content
     );
@@ -105,11 +125,11 @@ function parseFoodTaggingResult(content: string) {
   try {
     parsed = JSON.parse(extractJsonObject(content)) as Partial<FoodTaggingResult>;
   } catch (error) {
-    if (error instanceof WatsonxTaggingError) {
+    if (error instanceof OllamaTaggingError) {
       throw error;
     }
 
-    throw new WatsonxTaggingError(
+    throw new OllamaTaggingError(
       "The local model returned invalid JSON.",
       content
     );
@@ -122,7 +142,7 @@ function parseFoodTaggingResult(content: string) {
   };
 }
 
-export async function generateWatsonxText(prompt: string) {
+export async function generateOllamaText(prompt: string) {
   const response = await fetch(`${ollamaUrl}/api/generate`, {
     method: "POST",
     headers: {
@@ -166,7 +186,7 @@ export async function classifyFoodTags(input: FoodTaggingInput) {
     },
     taxonomy
   );
-  const content = await generateWatsonxText(prompt);
+  const content = await generateOllamaText(prompt);
 
   return parseFoodTaggingResult(content);
 }

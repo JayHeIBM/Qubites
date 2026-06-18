@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { classifyFoodTags } from "../../lib/watsonx";
+import { classifyFoodTags } from "../../lib/ollama";
 
 export async function POST(request: Request) {
   try {
@@ -25,16 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json(tags);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unknown watsonx.ai error.";
-    const watsonxOutput =
-      error instanceof Error && "watsonxOutput" in error
-        ? String(error.watsonxOutput)
+      error instanceof Error ? error.message : "Unknown Ollama error.";
+    const ollamaOutput =
+      error instanceof Error && "ollamaOutput" in error
+        ? String(error.ollamaOutput)
         : undefined;
 
     return NextResponse.json(
       {
         error: message,
-        watsonxOutput,
+        ollamaOutput,
       },
       { status: 500 }
     );

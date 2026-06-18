@@ -7,7 +7,7 @@ type FoodTagsResponse = {
   restrictions?: string[];
   cuisines?: string[];
   error?: string;
-  watsonxOutput?: string;
+  ollamaOutput?: string;
 };
 
 export default function Home() {
@@ -36,7 +36,7 @@ export default function Home() {
       const data = (await response.json()) as FoodTagsResponse;
       setResult(data);
     } catch {
-      setResult({ error: "Failed to call the watsonx.ai API." });
+      setResult({ error: "Failed to call the Ollama API." });
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +47,7 @@ export default function Home() {
       <div className="mx-auto flex max-w-3xl flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
         <div className="space-y-2">
           <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            IBM watsonx.ai test
+            Ollama local model test
           </p>
           <h1 className="text-3xl font-semibold">Food tag classifier</h1>
           <p className="text-sm text-zinc-600">
