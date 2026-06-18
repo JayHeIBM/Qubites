@@ -20,9 +20,9 @@ type FoodAvailabilityRecord = {
   food_items: {
     id: string;
     name: string;
+    food_item_dietary_tags: Array<Record<string, boolean | null | undefined>> | null;
+    food_item_allergens: Array<Record<string, boolean | null | undefined>> | null;
   }[] | null;
-  food_item_dietary_tags: Array<Record<string, boolean | null | undefined>> | null;
-  food_item_allergens: Array<Record<string, boolean | null | undefined>> | null;
 };
 
 function shuffle<T>(values: T[]) {
@@ -37,8 +37,9 @@ function shuffle<T>(values: T[]) {
 }
 
 function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
-  const dietaryTags = food.food_item_dietary_tags?.[0] ?? null;
-  const allergens = food.food_item_allergens?.[0] ?? null;
+  const foodItem = food.food_items?.[0] ?? null;
+  const dietaryTags = foodItem?.food_item_dietary_tags?.[0] ?? null;
+  const allergens = foodItem?.food_item_allergens?.[0] ?? null;
 
   for (const column of dietaryRestrictionColumns) {
     if (user.dietary?.[column] && !dietaryTags?.[column]) {
@@ -75,9 +76,12 @@ export async function POST() {
       food_item_id,
       quantity,
       expires_at,
-      food_items(id, name),
-      food_item_dietary_tags(*),
-      food_item_allergens(*)
+      food_items(
+        id,
+        name,
+        food_item_dietary_tags(*),
+        food_item_allergens(*)
+      )
     `)
     .eq("status", "available");
 
