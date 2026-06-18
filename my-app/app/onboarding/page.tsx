@@ -27,7 +27,7 @@ export default function OnboardingPage() {
 
   function finish() {
     // TODO: persist selections to user profile when auth is implemented
-    router.push('/home')
+    router.push('/home') // routes to app/(main)/home
   }
 
   return (
