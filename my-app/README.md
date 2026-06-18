@@ -1,5 +1,28 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Supabase user management setup
+
+Run the SQL in [`supabase/users.sql`](supabase/users.sql) in your Supabase SQL editor to create the `users` table with these fields:
+
+- `id`
+- `food_prefs`
+- `slack_id`
+
+Set these server environment variables before calling the API routes:
+
+```bash
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+Available API endpoints:
+
+- `GET /api/users`
+- `POST /api/users`
+- `GET /api/users/:id`
+- `PATCH /api/users/:id`
+- `DELETE /api/users/:id`
+
 ## Getting Started
 
 First, run the development server:
