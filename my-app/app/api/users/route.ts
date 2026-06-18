@@ -29,8 +29,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  console.log("[POST /api/users] Request received");
+
   try {
     const body = await request.json();
+    console.log("[POST /api/users] Parsed request body", body);
+
     const slackId = body?.slackId;
     const name = body?.name ?? null;
     const role = body?.role ?? "employee";
@@ -46,7 +50,17 @@ export async function POST(request: Request) {
       "allergies"
     );
 
+    console.log("[POST /api/users] Validated payload", {
+      slackId,
+      name,
+      role,
+      cuisines,
+      dietaryRestrictions,
+      allergies,
+    });
+
     if (!slackId || typeof slackId !== "string") {
+      console.warn("[POST /api/users] Missing or invalid slackId", { slackId });
       return NextResponse.json(
         { error: "slackId is required." },
         { status: 400 }
@@ -54,6 +68,7 @@ export async function POST(request: Request) {
     }
 
     if (name !== null && typeof name !== "string") {
+      console.warn("[POST /api/users] Invalid name", { name });
       return NextResponse.json(
         { error: "name must be a string." },
         { status: 400 }
@@ -61,12 +76,14 @@ export async function POST(request: Request) {
     }
 
     if (role !== "employee" && role !== "chef") {
+      console.warn("[POST /api/users] Invalid role", { role });
       return NextResponse.json(
         { error: "role must be employee or chef." },
         { status: 400 }
       );
     }
 
+    console.log("[POST /api/users] Inserting user row");
     const { data, error } = await supabase
       .from("users")
       .insert({
@@ -78,8 +95,12 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      console.error("[POST /api/users] Failed to insert user row", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    console.log("[POST /api/users] User row inserted", data);
+    console.log("[POST /api/users] Upserting preference rows");
 
     await Promise.all([
       createOrUpdatePreferenceRow(
@@ -102,14 +123,30 @@ export async function POST(request: Request) {
       ),
     ]);
 
-    await sendSlackDirectMessage(
-      data.slack_id,
-      `Welcome to Qubites${data.name ? `, ${data.name}` : ""}! Your food preferences have been saved.`
-    );
+    console.log("[POST /api/users] Preference rows upserted", { userId: data.id });
 
-    return NextResponse.json(await hydrateUser(data), { status: 201 });
+    try {
+      console.log("[POST /api/users] Sending Slack welcome DM", {
+        slackId: data.slack_id,
+      });
+      await sendSlackDirectMessage(
+        data.slack_id,
+        `Welcome to Qubites${data.name ? `, ${data.name}` : ""}! Your food preferences have been saved.`
+      );
+      console.log("[POST /api/users] Slack welcome DM sent", {
+        slackId: data.slack_id,
+      });
+    } catch (slackError) {
+      console.error("[POST /api/users] Slack welcome DM failed", slackError);
+    }
+
+    const hydratedUser = await hydrateUser(data);
+    console.log("[POST /api/users] Returning created user", hydratedUser);
+
+    return NextResponse.json(hydratedUser, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error.";
+    console.error("[POST /api/users] Request failed", error);
 
     return NextResponse.json({ error: message }, { status: 400 });
   }
