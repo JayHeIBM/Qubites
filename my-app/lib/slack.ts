@@ -18,6 +18,11 @@ type SlackPostMessageResponse = {
 };
 
 async function slackApiRequest<T>(endpoint: string, body: Record<string, unknown>) {
+  console.log("[Slack] Request start", {
+    endpoint,
+    body,
+  });
+
   const response = await fetch(`https://slack.com/api/${endpoint}`, {
     method: "POST",
     headers: {
@@ -29,7 +34,21 @@ async function slackApiRequest<T>(endpoint: string, body: Record<string, unknown
 
   const payload = (await response.json()) as T & { ok?: boolean; error?: string };
 
+  console.log("[Slack] Response received", {
+    endpoint,
+    status: response.status,
+    ok: payload.ok,
+    error: payload.error,
+    payload,
+  });
+
   if (!response.ok || !payload.ok) {
+    console.error("[Slack] Request failed", {
+      endpoint,
+      status: response.status,
+      body,
+      payload,
+    });
     throw new Error(payload.error ?? `Slack API request failed for ${endpoint}.`);
   }
 
@@ -37,6 +56,11 @@ async function slackApiRequest<T>(endpoint: string, body: Record<string, unknown
 }
 
 export async function sendSlackDirectMessage(slackUserId: string, text: string) {
+  console.log("[Slack] sendSlackDirectMessage called", {
+    slackUserId,
+    text,
+  });
+
   const conversation = await slackApiRequest<SlackOpenConversationResponse>(
     "conversations.open",
     {
@@ -45,11 +69,25 @@ export async function sendSlackDirectMessage(slackUserId: string, text: string) 
   );
 
   if (!conversation.channel?.id) {
+    console.error("[Slack] Missing DM channel in conversations.open response", {
+      slackUserId,
+      conversation,
+    });
     throw new Error("Slack did not return a DM channel.");
   }
+
+  console.log("[Slack] DM channel opened", {
+    slackUserId,
+    channelId: conversation.channel.id,
+  });
 
   await slackApiRequest<SlackPostMessageResponse>("chat.postMessage", {
     channel: conversation.channel.id,
     text,
+  });
+
+  console.log("[Slack] DM sent successfully", {
+    slackUserId,
+    channelId: conversation.channel.id,
   });
 }

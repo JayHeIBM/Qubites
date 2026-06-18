@@ -57,13 +57,16 @@ function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
 }
 
 export async function POST() {
-  const { data: users, error: usersError } = await supabase.from("users").select(`
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .select(`
       id,
       slack_id,
       name,
       user_dietary_restrictions(*),
       user_allergies(*)
-    `);
+    `)
+    .eq("role", "employee");
 
   if (usersError) {
     return NextResponse.json({ error: usersError.message }, { status: 500 });
