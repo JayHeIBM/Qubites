@@ -1,5 +1,10 @@
-"use client";
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import Navbar from './components/Navbar'
+import MealCard from './components/MealCard'
 
+<<<<<<< HEAD
 import { FormEvent, useState } from "react";
 
 type FoodTagsResponse = {
@@ -39,10 +44,47 @@ export default function Home() {
       setResult({ error: "Failed to call the Ollama API." });
     } finally {
       setIsLoading(false);
+=======
+export default async function HomePage() {
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        },
+      },
+>>>>>>> 5623810 (Slicka)
     }
-  }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const now = new Date().toISOString()
+  const { data: meal } = await supabase
+    .from('meal_windows')
+    .select('*')
+    .eq('is_active', true)
+    .lte('available_from', now)
+    .gte('available_until', now)
+    .order('available_from', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const userDisplayName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email ||
+    'User'
 
   return (
+<<<<<<< HEAD
     <main className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
       <div className="mx-auto flex max-w-3xl flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
         <div className="space-y-2">
@@ -69,37 +111,21 @@ export default function Home() {
               placeholder="Chicken tikka masala"
               required
             />
+=======
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <Navbar userName={userDisplayName} />
+      <main className="max-w-2xl mx-auto px-4 py-12">
+        {meal ? (
+          <MealCard meal={meal} />
+        ) : (
+          <div className="text-center py-24">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h2 className="text-2xl font-bold text-blue-900 mb-2">No meal available right now</h2>
+            <p className="text-blue-500">Check back soon — something delicious is on its way!</p>
+>>>>>>> 5623810 (Slicka)
           </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="description">
-              Description (optional)
-            </label>
-            <textarea
-              id="description"
-              className="min-h-28 w-full rounded-lg border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-zinc-500"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Creamy tomato curry with chicken and yogurt"
-            />
-          </div>
-
-          <button
-            className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-400"
-            disabled={isLoading}
-            type="submit"
-          >
-            {isLoading ? "Classifying..." : "Classify food"}
-          </button>
-        </form>
-
-        <section className="space-y-3">
-          <h2 className="text-lg font-medium">Response</h2>
-          <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm whitespace-pre-wrap text-zinc-100">
-            {result ? JSON.stringify(result, null, 2) : "Submit a food to see tags."}
-          </pre>
-        </section>
-      </div>
-    </main>
-  );
+        )}
+      </main>
+    </div>
+  )
 }

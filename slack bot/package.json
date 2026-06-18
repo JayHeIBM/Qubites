@@ -1,0 +1,27 @@
+{
+  "name": "qubites",
+  "version": "1.0.0",
+  "description": "**Qubites**",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JayHeIBM/Qubites.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JayHeIBM/Qubites/issues"
+  },
+  "homepage": "https://github.com/JayHeIBM/Qubites#readme",
+  "dependencies": {
+    "@slack/bolt": "^4.7.3",
+    "@supabase/supabase-js": "^2.108.2",
+    "dotenv": "^17.4.2"
+  }
+}
