@@ -12,6 +12,7 @@ import {
   dietaryRestrictionColumns,
   parseSelectedColumns,
 } from "@/lib/preferences";
+import { sendSlackDirectMessage } from "@/lib/slack";
 import { supabase } from "@/lib/supabase";
 
 export async function GET() {
@@ -100,6 +101,11 @@ export async function POST(request: Request) {
         buildBooleanRecord(allergies, allergyColumns)
       ),
     ]);
+
+    await sendSlackDirectMessage(
+      data.slack_id,
+      `Welcome to Qubites${data.name ? `, ${data.name}` : ""}! Your food preferences have been saved.`
+    );
 
     return NextResponse.json(await hydrateUser(data), { status: 201 });
   } catch (error) {
