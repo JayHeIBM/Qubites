@@ -121,23 +121,25 @@ export default function FoodCard({ listing, onClaim, onCopy }: FoodCardProps) {
   const fulllyClaimed = portionsClaimed >= portionsTotal
 
   return (
-    <article className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden w-full">
+    <article className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden w-full flex flex-row">
 
-      {/* ── Photo ── */}
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={title}
-          className="w-full h-40 sm:h-48 object-cover"
-        />
-      ) : (
-        <div className="w-full h-36 sm:h-44 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-5xl select-none">
-          🍽️
-        </div>
-      )}
+      {/* ── Photo — wider vertical strip, fills full card height ── */}
+      <div className="flex-shrink-0 w-36 sm:w-44 self-stretch">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full min-h-[160px] bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-4xl select-none">
+            🍽️
+          </div>
+        )}
+      </div>
 
       {/* ── Body ── */}
-      <div className="p-4 sm:p-5 flex flex-col gap-3">
+      <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col gap-2">
 
         {/* Title row */}
         <div className="flex items-start justify-between gap-2">
