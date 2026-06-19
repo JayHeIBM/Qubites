@@ -32,11 +32,16 @@ export function createMealLinkToken(payload: MealLinkPayload) {
   const encodedPayload = toBase64Url(JSON.stringify(payload));
   const signature = sign(encodedPayload);
 
-  return `${encodedPayload}.${signature}`;
+  // Use '~' as separator — it never appears in base64url alphabet
+  return `${encodedPayload}~${signature}`;
 }
 
 export function verifyMealLinkToken(token: string) {
-  const [encodedPayload, providedSignature] = token.split(".");
+  const separatorIndex = token.indexOf("~");
+  if (separatorIndex === -1) return null;
+
+  const encodedPayload = token.slice(0, separatorIndex);
+  const providedSignature = token.slice(separatorIndex + 1);
 
   if (!encodedPayload || !providedSignature) {
     return null;

@@ -8,6 +8,7 @@ import FilterBar from '@/app/components/home/FilterBar'
 import type { ActiveFilters, FilterKey } from '@/app/components/home/FilterBar'
 import type { FoodListing } from '@/app/components/food/types'
 
+
 // ── API → FoodListing adapter ─────────────────────────────────────────────────
 
 interface AvailabilityRow {
@@ -35,12 +36,6 @@ interface UserProfile {
   cuisines: string[]
   dietaryRestrictions: string[]
   allergies: string[]
-}
-
-interface AssignmentRow {
-  food_availability_id: string
-  user_id: string
-  status: string
 }
 
 interface CurrentUser {
@@ -163,19 +158,13 @@ export default function HomePage() {
         const availability: AvailabilityRow[] = await availRes.json()
         const me: UserProfile | null = userRes && userRes.ok ? await userRes.json() : null
 
-        // Fetch assignments for current user (to determine userCanClaim)
+        // Fetch pending assignments via API (service-role, bypasses RLS)
         let assignedAvailIds = new Set<string>()
         if (me) {
-          const { data: myAssignments } = await supabase
-            .from('food_assignments')
-            .select('food_availability_id, status')
-            .eq('user_id', me.id)
-            .eq('status', 'pending')
-
-          if (myAssignments) {
-            assignedAvailIds = new Set(
-              (myAssignments as AssignmentRow[]).map((a) => a.food_availability_id)
-            )
+          const pendingRes = await fetch(`/api/assignments/pending?userId=${encodeURIComponent(me.id)}`)
+          if (pendingRes.ok) {
+            const { availabilityIds } = (await pendingRes.json()) as { availabilityIds: string[] }
+            assignedAvailIds = new Set(availabilityIds)
           }
         }
 
