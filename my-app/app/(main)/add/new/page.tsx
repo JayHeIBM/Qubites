@@ -24,7 +24,7 @@ import {
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
 function ProgressHeader({ step }: { step: 1 | 2 | 3 }) {
-  const labels = ['Basic details', 'Review tags', 'Run assignments']
+  const labels = ['Basic details', 'Review tags', 'Send matches']
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-1.5">

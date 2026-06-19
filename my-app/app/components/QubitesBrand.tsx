@@ -13,7 +13,7 @@ export default function QubitesBrand() {
 
       {/* App name */}
       <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
-        Qubites
+        Bob-a-bite
       </h1>
 
       {/* Tagline */}

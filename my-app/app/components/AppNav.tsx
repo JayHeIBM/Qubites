@@ -68,7 +68,7 @@ export default function AppNav() {
       <header className="hidden md:flex fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-200 items-center px-6 gap-6 shadow-sm">
         {/* Wordmark */}
         <span className="text-lg font-bold text-blue-700 tracking-tight mr-auto">
-          Qubites 🍽️
+          Bob-a-bite 🍽️
         </span>
 
         {/* Home */}
