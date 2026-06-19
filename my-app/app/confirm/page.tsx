@@ -2,74 +2,95 @@
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
-import { createClient } from '@/lib/supabase-browser'
-import DietaryTag from '../components/DietaryTag'
 import Link from 'next/link'
 
-interface Meal {
+interface AssignmentDetail {
   id: string
-  name: string
-  description: string
-  quantity: number
-  dietary_tags: string[]
-  image_url?: string | null
+  status: string
+  food_item_id: string
+  foodName: string
+  description: string | null
+  cuisines: string[]
+  dietaryTags: string[]
+  allergens: string[]
+}
+
+function toLabel(key: string) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function TagPill({ label, color }: { label: string; color: string }) {
+  return (
+    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${color}`}>
+      {label}
+    </span>
+  )
 }
 
 function ConfirmContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const mealId = searchParams.get('mealId')
+  const token = searchParams.get('token')
 
-  const [meal, setMeal] = useState<Meal | null>(null)
-  const [userName, setUserName] = useState('')
-  const [userId, setUserId] = useState('')
+  const [detail, setDetail] = useState<AssignmentDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [claiming, setClaiming] = useState(false)
   const [claimed, setClaimed] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!mealId) {
-      router.replace('/')
+    if (!token) {
+      router.replace('/home')
       return
     }
 
+    // Verify token client-side to get assignmentId, then fetch assignment detail
     async function loadData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/login'); return }
+      try {
+        // Verify via API (server holds the secret)
+        const verifyRes = await fetch(`/api/meal-links/verify?token=${encodeURIComponent(token!)}`)
+        if (!verifyRes.ok) {
+          setError('This link is invalid or has expired.')
+          setLoading(false)
+          return
+        }
 
-      setUserId(user.id)
-      setUserName(
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email ||
-        'You'
-      )
+        const payload = (await verifyRes.json()) as { mealWindowId: string; userId: string }
+        const assignmentId = payload.mealWindowId
 
-      const { data: mealData, error: mealErr } = await supabase
-        .from('meal_windows')
-        .select('id, name, description, quantity, dietary_tags, image_url')
-        .eq('id', mealId)
-        .maybeSingle()
+        // Load assignment + food item details
+        const res = await fetch(`/api/claims?assignmentId=${encodeURIComponent(assignmentId)}`)
+        if (!res.ok) {
+          setError('Could not load meal details.')
+          setLoading(false)
+          return
+        }
 
-      if (mealErr || !mealData) { router.replace('/'); return }
-      setMeal(mealData)
-      setLoading(false)
+        const data = (await res.json()) as AssignmentDetail
+        setDetail(data)
+
+        if (data.status === 'claimed') {
+          setClaimed(true)
+        }
+      } catch {
+        setError('Something went wrong loading your meal.')
+      } finally {
+        setLoading(false)
+      }
     }
 
     loadData()
-  }, [mealId, router])
+  }, [token, router])
 
   async function handleClaim() {
-    if (!meal || !userId) return
+    if (!detail || !token) return
     setClaiming(true)
     setError('')
     try {
       const res = await fetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meal_window_id: meal.id }),
+        body: JSON.stringify({ assignmentId: detail.id, token }),
       })
       if (!res.ok) {
         const body = await res.json()
@@ -92,6 +113,21 @@ function ConfirmContent() {
     )
   }
 
+  if (error && !detail) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center border border-red-100">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Link expired or invalid</h1>
+          <p className="text-sm text-gray-500 mb-6">{error}</p>
+          <Link href="/home" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
+            Go home
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   if (claimed) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
@@ -99,13 +135,10 @@ function ConfirmContent() {
           <div className="text-6xl mb-4">🎉</div>
           <h1 className="text-3xl font-bold text-blue-900 mb-2">You&apos;re all set!</h1>
           <p className="text-gray-500 mb-2">
-            Enjoy your <span className="font-semibold text-blue-700">{meal?.name}</span>!
+            Enjoy your <span className="font-semibold text-blue-700">{detail?.foodName}</span>!
           </p>
           <p className="text-sm text-blue-400 mb-8">Head over to the pickup spot when it&apos;s ready.</p>
-          <Link
-            href="/"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95"
-          >
+          <Link href="/home" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
             Back to home
           </Link>
         </div>
@@ -116,26 +149,32 @@ function ConfirmContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-blue-100">
-        <Link href="/" className="text-blue-400 hover:text-blue-600 text-sm mb-6 inline-block transition-colors">
+        <Link href="/home" className="text-blue-400 hover:text-blue-600 text-sm mb-6 inline-block transition-colors">
           ← Back
         </Link>
         <h1 className="text-2xl font-bold text-blue-900 mb-1">Confirm your claim</h1>
-        <p className="text-gray-400 text-sm mb-6">Claiming as <span className="font-semibold text-blue-600">{userName}</span></p>
+        <p className="text-sm text-gray-400 mb-6">You have been matched with this meal.</p>
 
-        {meal?.image_url ? (
-          <img src={meal.image_url} alt={meal.name} className="w-full h-40 object-cover rounded-2xl mb-5" />
-        ) : (
-          <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-4xl mb-5">
-            🍲
-          </div>
+        {/* Meal image placeholder */}
+        <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-4xl mb-5 select-none">
+          🍽️
+        </div>
+
+        <h2 className="text-xl font-bold text-blue-900 mb-1">{detail?.foodName}</h2>
+        {detail?.description && (
+          <p className="text-gray-500 text-sm mb-4">{detail.description}</p>
         )}
 
-        <h2 className="text-xl font-bold text-blue-900 mb-1">{meal?.name}</h2>
-        <p className="text-gray-500 text-sm mb-4">{meal?.description}</p>
-
+        {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {(meal?.dietary_tags ?? []).map((tag) => (
-            <DietaryTag key={tag} tag={tag} />
+          {detail?.allergens.map((a) => (
+            <TagPill key={a} label={toLabel(a)} color="bg-orange-50 border-orange-200 text-orange-700" />
+          ))}
+          {detail?.dietaryTags.map((r) => (
+            <TagPill key={r} label={toLabel(r)} color="bg-purple-50 border-purple-200 text-purple-700" />
+          ))}
+          {detail?.cuisines.map((c) => (
+            <TagPill key={c} label={toLabel(c)} color="bg-green-50 border-green-200 text-green-700" />
           ))}
         </div>
 

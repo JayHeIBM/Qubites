@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { allergyColumns, dietaryRestrictionColumns } from "@/lib/preferences";
+import { createMealLinkToken } from "@/app/lib/meal-link-token";
 import { sendSlackDirectMessage } from "@/lib/slack";
 import { supabase } from "@/lib/supabase";
 
@@ -18,13 +19,14 @@ type FoodAvailabilityRecord = {
   quantity: number;
   description: string | null;
   expires_at: string | null;
+  // Supabase returns a many-to-one FK join as a single object, not an array
   food_items: {
     id: string;
     name: string;
     food_item_dietary_tags: Array<Record<string, boolean | null | undefined>> | null;
     food_item_allergens: Array<Record<string, boolean | null | undefined>> | null;
     food_item_cuisines: Array<Record<string, boolean | null | undefined>> | null;
-  }[] | null;
+  } | null;
 };
 
 function shuffle<T>(values: T[]) {
@@ -39,7 +41,7 @@ function shuffle<T>(values: T[]) {
 }
 
 function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
-  const foodItem = food.food_items?.[0] ?? null;
+  const foodItem = food.food_items ?? null;
   const dietaryTags = foodItem?.food_item_dietary_tags?.[0] ?? null;
   const allergens = foodItem?.food_item_allergens?.[0] ?? null;
 
@@ -58,11 +60,23 @@ function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
   return true;
 }
 
+function buildClaimLink(baseUrl: string, assignmentId: string, userId: string, expiresAt: string | null): string {
+  const mealExpiry = expiresAt ? new Date(expiresAt).getTime() : Date.now() + 24 * 60 * 60 * 1000;
+  const expiresInSeconds = Math.max(60, Math.floor((mealExpiry - Date.now()) / 1000));
+  const token = createMealLinkToken({
+    userId,
+    mealWindowId: assignmentId,
+    exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
+  });
+  return `${baseUrl}/confirm?token=${encodeURIComponent(token)}`;
+}
+
 function buildAssignmentMessage(
   userName: string | null,
-  food: FoodAvailabilityRecord
+  food: FoodAvailabilityRecord,
+  claimLink: string,
 ): string {
-  const foodItem = food.food_items?.[0] ?? null;
+  const foodItem = food.food_items ?? null;
   const mealName = foodItem?.name ?? "a meal";
 
   const lines: string[] = [];
@@ -128,12 +142,14 @@ function buildAssignmentMessage(
   }
 
   lines.push("");
-  lines.push("Please collect your meal before it expires. Enjoy! 🎉");
+  lines.push(`👉 *Claim your meal:* ${claimLink}`);
+  lines.push("_This link is personal to you and expires when the meal does._");
 
   return lines.join("\n");
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const baseUrl = process.env.APP_BASE_URL ?? new URL(request.url).origin;
   const { data: users, error: usersError } = await supabase
     .from("users")
     .select(`
@@ -182,7 +198,7 @@ export async function POST() {
     foodName: string;
   }> = [];
 
-  for (const food of (availability ?? []) as FoodAvailabilityRecord[]) {
+  for (const food of (availability ?? []) as unknown as FoodAvailabilityRecord[]) {
     const eligibleUsers = ((users ?? []) as Array<
       UserProfile & {
         user_dietary_restrictions: UserProfile["dietary"][];
@@ -202,20 +218,26 @@ export async function POST() {
     const selectedUsers = shuffle(eligibleUsers).slice(0, food.quantity);
 
     for (const user of selectedUsers) {
-      const { error } = await supabase.from("food_assignments").insert({
-        food_availability_id: food.id,
-        food_item_id: food.food_item_id,
-        user_id: user.id,
-        status: "pending",
-      });
+      const { data: assignment, error } = await supabase
+        .from("food_assignments")
+        .insert({
+          food_availability_id: food.id,
+          food_item_id: food.food_item_id,
+          user_id: user.id,
+          status: "pending",
+        })
+        .select("id")
+        .single();
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      const claimLink = buildClaimLink(baseUrl, assignment.id, user.id, food.expires_at);
+
       await sendSlackDirectMessage(
         user.slack_id,
-        buildAssignmentMessage(user.name, food)
+        buildAssignmentMessage(user.name, food, claimLink)
       );
 
       assignedUserIds.add(user.id);
@@ -223,7 +245,7 @@ export async function POST() {
         foodAvailabilityId: food.id,
         userId: user.id,
         slackId: user.slack_id,
-        foodName: food.food_items?.[0]?.name ?? "Unknown food",
+        foodName: food.food_items?.name ?? "Unknown food",
       });
     }
   }
