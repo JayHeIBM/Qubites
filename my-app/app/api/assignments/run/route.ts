@@ -16,12 +16,14 @@ type FoodAvailabilityRecord = {
   id: string;
   food_item_id: string;
   quantity: number;
+  description: string | null;
   expires_at: string | null;
   food_items: {
     id: string;
     name: string;
     food_item_dietary_tags: Array<Record<string, boolean | null | undefined>> | null;
     food_item_allergens: Array<Record<string, boolean | null | undefined>> | null;
+    food_item_cuisines: Array<Record<string, boolean | null | undefined>> | null;
   }[] | null;
 };
 
@@ -56,6 +58,81 @@ function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
   return true;
 }
 
+function buildAssignmentMessage(
+  userName: string | null,
+  food: FoodAvailabilityRecord
+): string {
+  const foodItem = food.food_items?.[0] ?? null;
+  const mealName = foodItem?.name ?? "a meal";
+
+  const lines: string[] = [];
+
+  // Greeting
+  lines.push(`🍽️ *Hey${userName ? ` ${userName}` : ""}!* You've been matched with a meal.`);
+  lines.push("");
+
+  // Meal name
+  lines.push(`*${mealName}*`);
+
+  // Description
+  if (food.description) {
+    lines.push(food.description);
+  }
+
+  // Tags — collect active keys from each preference table
+  const dietaryTags = foodItem?.food_item_dietary_tags?.[0] ?? null;
+  const allergens = foodItem?.food_item_allergens?.[0] ?? null;
+  const cuisines = foodItem?.food_item_cuisines?.[0] ?? null;
+
+  const activeDietary = dietaryTags
+    ? Object.entries(dietaryTags)
+        .filter(([k, v]) => k !== "food_item_id" && v === true)
+        .map(([k]) => k.replace(/_/g, " "))
+    : [];
+
+  const activeAllergens = allergens
+    ? Object.entries(allergens)
+        .filter(([k, v]) => k !== "food_item_id" && v === true)
+        .map(([k]) => k.replace(/_/g, " "))
+    : [];
+
+  const activeCuisines = cuisines
+    ? Object.entries(cuisines)
+        .filter(([k, v]) => k !== "food_item_id" && v === true)
+        .map(([k]) => k.replace(/_/g, " "))
+    : [];
+
+  if (activeCuisines.length > 0) {
+    lines.push(`🌍 *Cuisine:* ${activeCuisines.join(", ")}`);
+  }
+
+  if (activeDietary.length > 0) {
+    lines.push(`✅ *Dietary tags:* ${activeDietary.join(", ")}`);
+  }
+
+  if (activeAllergens.length > 0) {
+    lines.push(`⚠️ *Contains allergens:* ${activeAllergens.join(", ")}`);
+  }
+
+  // Expiry
+  if (food.expires_at) {
+    const exp = new Date(food.expires_at);
+    const formatted = exp.toLocaleString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    lines.push(`⏰ *Pick up by:* ${formatted}`);
+  }
+
+  lines.push("");
+  lines.push("Please collect your meal before it expires. Enjoy! 🎉");
+
+  return lines.join("\n");
+}
+
 export async function POST() {
   const { data: users, error: usersError } = await supabase
     .from("users")
@@ -78,12 +155,14 @@ export async function POST() {
       id,
       food_item_id,
       quantity,
+      description,
       expires_at,
       food_items(
         id,
         name,
         food_item_dietary_tags(*),
-        food_item_allergens(*)
+        food_item_allergens(*),
+        food_item_cuisines(*)
       )
     `)
     .eq("status", "available");
@@ -136,7 +215,7 @@ export async function POST() {
 
       await sendSlackDirectMessage(
         user.slack_id,
-        `You have been matched with ${food.food_items?.[0]?.name ?? "a meal"}. Please pick it up before it is gone.`
+        buildAssignmentMessage(user.name, food)
       );
 
       assignedUserIds.add(user.id);
