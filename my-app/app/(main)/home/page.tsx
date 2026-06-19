@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import FoodCard from '@/app/components/food/FoodCard'
@@ -41,6 +41,13 @@ interface AssignmentRow {
   food_availability_id: string
   user_id: string
   status: string
+}
+
+interface CurrentUser {
+  id: string
+  allergens: string[]
+  restrictions: string[]
+  preferences: string[]
 }
 
 /**
@@ -122,11 +129,7 @@ function sortListings(listings: FoodListing[]): FoodListing[] {
 export default function HomePage() {
   const router = useRouter()
   const [allListings, setAllListings] = useState<FoodListing[]>([])
-  const [currentUser, setCurrentUser] = useState<{
-    allergens: string[]
-    restrictions: string[]
-    preferences: string[]
-  }>({ allergens: [], restrictions: [], preferences: [] })
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({ id: '', allergens: [], restrictions: [], preferences: [] })
   const [loading, setLoading] = useState(true)
 
   const [filters, setFilters] = useState<ActiveFilters>({
@@ -151,17 +154,14 @@ export default function HomePage() {
 
         const slackId = authUser.user_metadata?.slack_id as string | undefined
 
-        // Fetch availability and users in parallel
-        const [availRes, usersRes] = await Promise.all([
+        // Fetch availability and user profile in parallel
+        const [availRes, userRes] = await Promise.all([
           fetch('/api/food-availability'),
-          fetch('/api/users'),
+          slackId ? fetch(`/api/users?slackId=${encodeURIComponent(slackId)}`) : Promise.resolve(null),
         ])
 
         const availability: AvailabilityRow[] = await availRes.json()
-        const users: UserProfile[] = await usersRes.json()
-
-        // Find current user profile
-        const me = slackId ? users.find((u) => u.slackId === slackId) : null
+        const me: UserProfile | null = userRes && userRes.ok ? await userRes.json() : null
 
         // Fetch assignments for current user (to determine userCanClaim)
         let assignedAvailIds = new Set<string>()
@@ -190,6 +190,7 @@ export default function HomePage() {
 
         if (me) {
           setCurrentUser({
+            id: me.id,
             allergens: me.allergies,
             restrictions: me.dietaryRestrictions,
             preferences: me.cuisines,
@@ -210,6 +211,20 @@ export default function HomePage() {
   function toggleFilter(key: FilterKey) {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }))
   }
+
+  const handleClaim = useCallback(async (availabilityId: string) => {
+    if (!currentUser.id) return
+    try {
+      const res = await fetch(
+        `/api/assignments/my-claim?availabilityId=${encodeURIComponent(availabilityId)}&userId=${encodeURIComponent(currentUser.id)}`
+      )
+      if (!res.ok) return
+      const { token } = (await res.json()) as { token: string }
+      router.push(`/confirm?token=${encodeURIComponent(token)}`)
+    } catch {
+      // ignore — button remains clickable for retry
+    }
+  }, [currentUser.id, router])
 
   const visibleListings = useMemo(
     () => sortListings(allListings.filter(l => applyFilters(l, filters, currentUser))),
@@ -257,7 +272,7 @@ export default function HomePage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           {visibleListings.map((listing) => (
-            <FoodCard key={listing.id} listing={listing} />
+            <FoodCard key={listing.id} listing={listing} onClaim={handleClaim} />
           ))}
         </div>
       )}
