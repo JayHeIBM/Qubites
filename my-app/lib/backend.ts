@@ -143,10 +143,12 @@ export async function hydrateFoodAvailabilityRow(availability: FoodAvailabilityR
       .select("id, name")
       .eq("id", availability.food_item_id)
       .single(),
+    // Only count assignments that have been confirmed by the user clicking claim
     supabase
       .from("food_assignments")
       .select("*", { count: "exact", head: true })
-      .eq("food_availability_id", availability.id),
+      .eq("food_availability_id", availability.id)
+      .eq("status", "claimed"),
   ]);
 
   if (error) {

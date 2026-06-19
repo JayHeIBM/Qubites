@@ -50,6 +50,7 @@ export async function GET(request: Request) {
         .from('food_assignments')
         .select('*', { count: 'exact', head: true })
         .eq('food_availability_id', row.id)
+        .eq('status', 'claimed')
 
       let hydratedItem = null
       if (foodItem) {

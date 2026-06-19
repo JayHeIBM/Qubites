@@ -87,7 +87,7 @@ function applyFilters(
   filters: ActiveFilters,
   user: { allergens: string[]; restrictions: string[]; preferences: string[] }
 ): boolean {
-  if (listing.portionsClaimed >= listing.portionsTotal) return false
+  // Only hide when expired — the availability.status filter below handles fully-claimed
   if (new Date(listing.expiresAt).getTime() <= Date.now()) return false
 
   const allergenLabels = listing.tags.filter(t => t.kind === 'allergen').map(t => t.label.toLowerCase())
