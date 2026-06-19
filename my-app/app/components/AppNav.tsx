@@ -67,8 +67,8 @@ export default function AppNav() {
       {/* ── TOP BAR (md+) ─────────────────────────────────────── */}
       <header className="hidden md:flex fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-200 items-center px-6 gap-6 shadow-sm">
         {/* Wordmark */}
-        <span className="text-lg font-bold text-orange-700 tracking-tight mr-auto">
-          Bob-a-bite 🍽️
+        <span className="mr-auto">
+          <img src="/bob-a-bite-logo-final.svg" alt="Bob-a-bite" className="h-7 w-auto" />
         </span>
 
         {/* Home */}
@@ -118,6 +118,11 @@ export default function AppNav() {
           Profile
         </Link>
       </header>
+
+      {/* ── TOP BANNER (mobile, <md) ─────────────────────────── */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-50 h-12 bg-white border-b border-gray-200 flex items-center justify-center shadow-sm">
+        <img src="/bob-a-bite-logo-final.svg" alt="Bob-a-bite" className="h-6 w-auto" />
+      </div>
 
       {/* ── BOTTOM BAR (mobile, <md) ──────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 flex items-stretch h-16 shadow-[0_-1px_6px_rgba(0,0,0,0.06)]">

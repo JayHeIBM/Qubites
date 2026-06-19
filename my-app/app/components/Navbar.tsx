@@ -19,7 +19,7 @@ export default function Navbar({ userName }: NavbarProps) {
 
   return (
     <nav className="bg-orange-700 text-white px-6 py-4 flex items-center justify-between shadow-md">
-      <span className="text-xl font-bold tracking-tight">Bob-a-bite 🍽️</span>
+      <img src="/bob-a-bite-logo-final.svg" alt="Bob-a-bite" className="h-7 w-auto brightness-0 invert" />
       <div className="flex items-center gap-4">
         <span className="text-orange-100 text-sm">
           Hey, <span className="font-semibold text-white">{userName}</span>!

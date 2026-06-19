@@ -8,7 +8,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         Top padding on md+ clears the fixed top bar (h-14).
         Bottom padding on mobile clears the fixed bottom bar (h-16).
       */}
-      <main className="flex-1 pt-0 pb-16 md:pt-14 md:pb-0">
+      <main className="flex-1 pt-12 pb-16 md:pt-14 md:pb-0">
         {children}
       </main>
     </div>
