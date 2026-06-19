@@ -23,6 +23,7 @@ interface AvailabilityRow {
   foodItem: {
     id: string
     name: string
+    imageUrl: string | null
     cuisines: string[]
     dietaryTags: string[]
     allergens: string[]
@@ -63,6 +64,7 @@ function availabilityToListing(
   return {
     id: row.id,
     title: row.foodItem.name,
+    imageUrl: row.foodItem.imageUrl ?? undefined,
     type: 'leftover',
     location: 'See Slack message',
     postedAt: row.createdAt,

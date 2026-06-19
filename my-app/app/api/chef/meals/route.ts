@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     (availability ?? []).map(async (row) => {
       const { data: foodItem } = await supabase
         .from('food_items')
-        .select('id, name')
+        .select('id, name, image_url')
         .eq('id', row.food_item_id)
         .single()
 
@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { chefId, name, quantity, expiresAt } = body
     const description: string | null = body?.description ?? null
+    const imageUrl: string | null = typeof body?.imageUrl === 'string' ? body.imageUrl : null
 
     if (!chefId || typeof chefId !== 'string') {
       return NextResponse.json({ error: 'chefId is required.' }, { status: 400 })
@@ -122,8 +123,8 @@ export async function POST(request: Request) {
     // 1. Create the food item
     const { data: foodItem, error: foodError } = await supabase
       .from('food_items')
-      .insert({ name })
-      .select('id, name')
+      .insert({ name, image_url: imageUrl })
+      .select('id, name, image_url')
       .single()
 
     if (foodError) {

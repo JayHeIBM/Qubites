@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
   const { data, error } = await supabase
     .from("food_items")
-    .select("id, name")
+    .select("id, name, image_url")
     .order("name", { ascending: true });
 
   if (error) {
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const name = body?.name;
+    const imageUrl = body?.imageUrl ?? null;
     const cuisines = parseSelectedColumns(body?.cuisines, cuisineColumns, "cuisines");
     const dietaryTags = parseSelectedColumns(
       body?.dietaryTags,
@@ -52,8 +53,8 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from("food_items")
-      .insert({ name })
-      .select("id, name")
+      .insert({ name, image_url: imageUrl })
+      .select("id, name, image_url")
       .single();
 
     if (error) {

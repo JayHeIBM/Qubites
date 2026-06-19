@@ -18,6 +18,7 @@ type UserRow = {
 type FoodItemRow = {
   id: string;
   name: string;
+  image_url: string | null;
 };
 
 type FoodAvailabilityRow = {
@@ -105,6 +106,7 @@ export async function hydrateFoodItem(foodItem: FoodItemRow) {
   return {
     id: foodItem.id,
     name: foodItem.name,
+    imageUrl: foodItem.image_url ?? null,
     cuisines: toSelectedColumns(cuisines, cuisineColumns),
     dietaryTags: toSelectedColumns(dietaryTags, dietaryRestrictionColumns),
     allergens: toSelectedColumns(allergens, allergyColumns),
@@ -140,7 +142,7 @@ export async function hydrateFoodAvailabilityRow(availability: FoodAvailabilityR
   const [{ data: foodItem, error }, { count: claimedCount }] = await Promise.all([
     supabase
       .from("food_items")
-      .select("id, name")
+      .select("id, name, image_url")
       .eq("id", availability.food_item_id)
       .single(),
     // Only count assignments that have been confirmed by the user clicking claim

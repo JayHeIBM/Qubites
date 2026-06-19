@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   // Get food item with tags
   const { data: foodItem } = await supabase
     .from('food_items')
-    .select('id, name')
+    .select('id, name, image_url')
     .eq('id', assignment.food_item_id)
     .maybeSingle()
 

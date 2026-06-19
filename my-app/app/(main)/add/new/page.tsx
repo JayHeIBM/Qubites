@@ -426,6 +426,26 @@ function NewListingInner() {
 
     setSubmitting(true)
     try {
+      // ── Upload image to Supabase Storage if one was selected ──────────────
+      let imageUrl: string | null = null
+      if (form.imageFile) {
+        const supabase = createClient()
+        const ext = form.imageFile.name.split('.').pop() ?? 'jpg'
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('food-images')
+          .upload(path, form.imageFile, { contentType: form.imageFile.type, upsert: false })
+        if (uploadError) {
+          setSubmitError(`Image upload failed: ${uploadError.message}`)
+          setSubmitting(false)
+          return
+        }
+        const { data: urlData } = supabase.storage.from('food-images').getPublicUrl(path)
+        imageUrl = urlData.publicUrl
+        // Store the URL back into form so Step1 can display it
+        patchForm({ imagePreviewUrl: imageUrl })
+      }
+
       const res = await fetch('/api/chef/meals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -437,6 +457,7 @@ function NewListingInner() {
           cuisines: confirmedCuisines,
           dietaryTags: confirmedRestrictions,
           allergens: confirmedAllergens,
+          imageUrl,
           expiresAt: form.availableUntil
             ? new Date(form.availableUntil).toISOString()
             : null,

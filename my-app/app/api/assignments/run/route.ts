@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { allergyColumns, dietaryRestrictionColumns } from "@/lib/preferences";
+import { allergyColumns, dietaryRestrictionColumns, toSelectedColumns } from "@/lib/preferences";
 import { createMealLinkToken } from "@/app/lib/meal-link-token";
 import { sendSlackDirectMessage } from "@/lib/slack";
 import { supabase } from "@/lib/supabase";
@@ -9,24 +9,15 @@ type UserProfile = {
   id: string;
   slack_id: string;
   name: string | null;
-  dietary: Record<string, boolean | null | undefined> | null;
-  allergies: Record<string, boolean | null | undefined> | null;
+  // arrays of active tag keys e.g. ["halal", "vegetarian"]
+  dietaryRestrictions: string[];
+  allergies: string[];
 };
 
-type FoodAvailabilityRecord = {
-  id: string;
-  food_item_id: string;
-  quantity: number;
-  description: string | null;
-  expires_at: string | null;
-  // Supabase returns a many-to-one FK join as a single object, not an array
-  food_items: {
-    id: string;
-    name: string;
-    food_item_dietary_tags: Array<Record<string, boolean | null | undefined>> | null;
-    food_item_allergens: Array<Record<string, boolean | null | undefined>> | null;
-    food_item_cuisines: Array<Record<string, boolean | null | undefined>> | null;
-  } | null;
+type FoodTags = {
+  name: string;
+  dietaryTags: string[];   // active dietary tag keys on the food
+  allergens: string[];     // active allergen keys on the food
 };
 
 function shuffle<T>(values: T[]) {
@@ -40,19 +31,50 @@ function shuffle<T>(values: T[]) {
   return items;
 }
 
-function userMatchesFood(user: UserProfile, food: FoodAvailabilityRecord) {
-  const foodItem = food.food_items ?? null;
-  const dietaryTags = foodItem?.food_item_dietary_tags?.[0] ?? null;
-  const allergens = foodItem?.food_item_allergens?.[0] ?? null;
+/**
+ * Fetch the food item's dietary tags and allergens directly from their own tables.
+ * This avoids the fragile nested-join approach where a missing row returns null
+ * and causes everyone with a restriction to be incorrectly excluded.
+ */
+async function getFoodTags(foodItemId: string): Promise<FoodTags> {
+  const [nameRes, tagsRes, allergensRes] = await Promise.all([
+    supabase.from("food_items").select("name").eq("id", foodItemId).single(),
+    supabase.from("food_item_dietary_tags").select("*").eq("food_item_id", foodItemId).maybeSingle(),
+    supabase.from("food_item_allergens").select("*").eq("food_item_id", foodItemId).maybeSingle(),
+  ]);
 
-  for (const column of dietaryRestrictionColumns) {
-    if (user.dietary?.[column] && !dietaryTags?.[column]) {
+  return {
+    name: nameRes.data?.name ?? "Unknown",
+    dietaryTags: toSelectedColumns(
+      tagsRes.data as Record<string, boolean | null | undefined> | null,
+      dietaryRestrictionColumns
+    ),
+    allergens: toSelectedColumns(
+      allergensRes.data as Record<string, boolean | null | undefined> | null,
+      allergyColumns
+    ),
+  };
+}
+
+/**
+ * Returns true if the user can receive this food.
+ *
+ * Dietary restriction: if the user has a restriction (e.g. halal) the food
+ * MUST also be tagged with that restriction — otherwise exclude.
+ *
+ * Allergen: if the user is allergic to something AND the food contains it — exclude.
+ */
+function userMatchesFood(user: UserProfile, food: FoodTags): boolean {
+  // Dietary restrictions — food must satisfy ALL of the user's restrictions
+  for (const restriction of user.dietaryRestrictions) {
+    if (!food.dietaryTags.includes(restriction)) {
       return false;
     }
   }
 
-  for (const column of allergyColumns) {
-    if (user.allergies?.[column] && allergens?.[column]) {
+  // Allergens — food must NOT contain any of the user's allergens
+  for (const allergen of user.allergies) {
+    if (food.allergens.includes(allergen)) {
       return false;
     }
   }
@@ -71,66 +93,42 @@ function buildClaimLink(baseUrl: string, assignmentId: string, userId: string, e
   return `${baseUrl}/confirm?token=${encodeURIComponent(token)}`;
 }
 
+type AvailabilityRow = {
+  id: string;
+  food_item_id: string;
+  quantity: number;
+  description: string | null;
+  expires_at: string | null;
+};
+
 function buildAssignmentMessage(
   userName: string | null,
-  food: FoodAvailabilityRecord,
+  mealName: string,
+  description: string | null,
+  foodTags: FoodTags,
+  expiresAt: string | null,
   claimLink: string,
 ): string {
-  const foodItem = food.food_items ?? null;
-  const mealName = foodItem?.name ?? "a meal";
-
   const lines: string[] = [];
 
-  // Greeting
   lines.push(`🍽️ *Hey${userName ? ` ${userName}` : ""}!* You've been matched with a meal.`);
   lines.push("");
-
-  // Meal name
   lines.push(`*${mealName}*`);
 
-  // Description
-  if (food.description) {
-    lines.push(food.description);
+  if (description) {
+    lines.push(description);
   }
 
-  // Tags — collect active keys from each preference table
-  const dietaryTags = foodItem?.food_item_dietary_tags?.[0] ?? null;
-  const allergens = foodItem?.food_item_allergens?.[0] ?? null;
-  const cuisines = foodItem?.food_item_cuisines?.[0] ?? null;
-
-  const activeDietary = dietaryTags
-    ? Object.entries(dietaryTags)
-        .filter(([k, v]) => k !== "food_item_id" && v === true)
-        .map(([k]) => k.replace(/_/g, " "))
-    : [];
-
-  const activeAllergens = allergens
-    ? Object.entries(allergens)
-        .filter(([k, v]) => k !== "food_item_id" && v === true)
-        .map(([k]) => k.replace(/_/g, " "))
-    : [];
-
-  const activeCuisines = cuisines
-    ? Object.entries(cuisines)
-        .filter(([k, v]) => k !== "food_item_id" && v === true)
-        .map(([k]) => k.replace(/_/g, " "))
-    : [];
-
-  if (activeCuisines.length > 0) {
-    lines.push(`🌍 *Cuisine:* ${activeCuisines.join(", ")}`);
+  if (foodTags.dietaryTags.length > 0) {
+    lines.push(`✅ *Dietary tags:* ${foodTags.dietaryTags.map(t => t.replace(/_/g, " ")).join(", ")}`);
   }
 
-  if (activeDietary.length > 0) {
-    lines.push(`✅ *Dietary tags:* ${activeDietary.join(", ")}`);
+  if (foodTags.allergens.length > 0) {
+    lines.push(`⚠️ *Contains allergens:* ${foodTags.allergens.map(a => a.replace(/_/g, " ")).join(", ")}`);
   }
 
-  if (activeAllergens.length > 0) {
-    lines.push(`⚠️ *Contains allergens:* ${activeAllergens.join(", ")}`);
-  }
-
-  // Expiry
-  if (food.expires_at) {
-    const exp = new Date(food.expires_at);
+  if (expiresAt) {
+    const exp = new Date(expiresAt);
     const formatted = exp.toLocaleString("en-GB", {
       weekday: "short",
       day: "numeric",
@@ -151,13 +149,11 @@ function buildAssignmentMessage(
 export async function POST(request: Request) {
   const baseUrl = process.env.APP_BASE_URL ?? new URL(request.url).origin;
 
-  // Optional: scope the run to a single availability row
   const body = await request.json().catch(() => ({})) as { availabilityId?: string };
   const availabilityId = body?.availabilityId ?? null;
 
-  console.log("[assignments/run] Starting. availabilityId:", availabilityId);
-
-  const { data: users, error: usersError } = await supabase
+  // ── Load employees with their preference rows ────────────────────────────────
+  const { data: rawUsers, error: usersError } = await supabase
     .from("users")
     .select(`
       id,
@@ -172,24 +168,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: usersError.message }, { status: 500 });
   }
 
-  console.log("[assignments/run] Employees loaded:", users?.length ?? 0);
+  // Flatten nested preference rows into clean string arrays
+  type RawUser = {
+    id: string;
+    slack_id: string;
+    name: string | null;
+    user_dietary_restrictions: Array<Record<string, boolean | null | undefined>>;
+    user_allergies: Array<Record<string, boolean | null | undefined>>;
+  };
 
+  const allUsers: UserProfile[] = (rawUsers ?? []).map((u) => {
+    const raw = u as unknown as RawUser;
+    return {
+      id: raw.id,
+      slack_id: raw.slack_id,
+      name: raw.name,
+      dietaryRestrictions: toSelectedColumns(
+        raw.user_dietary_restrictions?.[0] ?? null,
+        dietaryRestrictionColumns
+      ),
+      allergies: toSelectedColumns(
+        raw.user_allergies?.[0] ?? null,
+        allergyColumns
+      ),
+    };
+  });
+
+  // ── Load availability rows ───────────────────────────────────────────────────
   let availabilityQuery = supabase
     .from("food_availability")
-    .select(`
-      id,
-      food_item_id,
-      quantity,
-      description,
-      expires_at,
-      food_items(
-        id,
-        name,
-        food_item_dietary_tags(*),
-        food_item_allergens(*),
-        food_item_cuisines(*)
-      )
-    `)
+    .select("id, food_item_id, quantity, description, expires_at")
     .eq("status", "available");
 
   if (availabilityId) {
@@ -199,14 +207,8 @@ export async function POST(request: Request) {
   const { data: availability, error: availabilityError } = await availabilityQuery;
 
   if (availabilityError) {
-    return NextResponse.json(
-      { error: availabilityError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: availabilityError.message }, { status: 500 });
   }
-
-  console.log("[assignments/run] Availability rows loaded:", availability?.length ?? 0);
-  console.log("[assignments/run] Availability data:", JSON.stringify(availability, null, 2));
 
   const assignedUserIds = new Set<string>();
   const createdAssignments: Array<{
@@ -219,34 +221,13 @@ export async function POST(request: Request) {
     slackError: string | null;
   }> = [];
 
-  for (const food of (availability ?? []) as unknown as FoodAvailabilityRecord[]) {
-    const allUsers = ((users ?? []) as Array<
-      UserProfile & {
-        user_dietary_restrictions: UserProfile["dietary"][];
-        user_allergies: UserProfile["allergies"][];
-      }
-    >).map((user) => ({
-      id: user.id,
-      slack_id: user.slack_id,
-      name: user.name,
-      dietary: user.user_dietary_restrictions?.[0] ?? null,
-      allergies: user.user_allergies?.[0] ?? null,
-    }));
-
-    console.log(`[assignments/run] Food: ${food.id} (${food.food_items?.name}), quantity: ${food.quantity}`);
-    console.log(`[assignments/run] food_items joined:`, JSON.stringify(food.food_items));
+  for (const food of (availability ?? []) as AvailabilityRow[]) {
+    // Fetch food tags via direct queries — clean boolean columns, no nested join issues
+    const foodTags = await getFoodTags(food.food_item_id);
 
     const eligibleUsers = allUsers
       .filter((user) => !assignedUserIds.has(user.id))
-      .filter((user) => {
-        const matches = userMatchesFood(user, food);
-        if (!matches) {
-          console.log(`[assignments/run] User ${user.id} (${user.name}) excluded. dietary:`, JSON.stringify(user.dietary), "allergies:", JSON.stringify(user.allergies));
-        }
-        return matches;
-      });
-
-    console.log(`[assignments/run] Eligible users for food ${food.id}:`, eligibleUsers.length);
+      .filter((user) => userMatchesFood(user, foodTags));
 
     const selectedUsers = shuffle(eligibleUsers).slice(0, food.quantity);
 
@@ -273,7 +254,7 @@ export async function POST(request: Request) {
       try {
         await sendSlackDirectMessage(
           user.slack_id,
-          buildAssignmentMessage(user.name, food, claimLink)
+          buildAssignmentMessage(user.name, foodTags.name, food.description, foodTags, food.expires_at, claimLink)
         );
         slackSent = true;
       } catch (err) {
@@ -287,7 +268,7 @@ export async function POST(request: Request) {
         userId: user.id,
         userName: user.name,
         slackId: user.slack_id,
-        foodName: food.food_items?.name ?? "Unknown food",
+        foodName: foodTags.name,
         slackSent,
         slackError,
       });

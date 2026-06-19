@@ -216,17 +216,28 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
       <div>
         <FieldLabel>Photo <span className="font-normal text-gray-400">(optional)</span></FieldLabel>
         {form.imagePreviewUrl ? (
-          <div className="relative rounded-xl overflow-hidden border border-gray-200">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={form.imagePreviewUrl} alt="Preview" className="w-full h-40 object-cover" />
-            <button
-              type="button"
-              onClick={() => onChange({ imageFile: null, imagePreviewUrl: null })}
-              className="absolute top-2 right-2 bg-white/80 hover:bg-white text-gray-600 rounded-full w-7 h-7 flex items-center justify-center shadow text-xs font-bold transition"
-              aria-label="Remove photo"
-            >
-              ✕
-            </button>
+          <div className="flex flex-col gap-1.5">
+            <div className="relative rounded-xl overflow-hidden border border-gray-200">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={form.imagePreviewUrl} alt="Preview" className="w-full h-40 object-cover" />
+              <button
+                type="button"
+                onClick={() => onChange({ imageFile: null, imagePreviewUrl: null })}
+                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-gray-600 rounded-full w-7 h-7 flex items-center justify-center shadow text-xs font-bold transition"
+                aria-label="Remove photo"
+              >
+                ✕
+              </button>
+            </div>
+            {form.imagePreviewUrl.startsWith('http') && (
+              <div className="flex items-center gap-1.5 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0 text-gray-400">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="text-xs text-gray-500 truncate font-mono">{form.imagePreviewUrl}</span>
+              </div>
+            )}
           </div>
         ) : (
           <div

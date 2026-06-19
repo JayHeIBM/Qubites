@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   const { data, error } = await supabase
     .from("food_items")
-    .select("id, name")
+    .select("id, name, image_url")
     .eq("id", id)
     .maybeSingle();
 
@@ -45,6 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = await request.json();
     const updates: {
       name?: string;
+      image_url?: string | null;
     } = {};
 
     const cuisines = parseSelectedColumns(body?.cuisines, cuisineColumns, "cuisines");
@@ -58,6 +59,13 @@ export async function PATCH(request: Request, context: RouteContext) {
       allergyColumns,
       "allergens"
     );
+
+    if ("imageUrl" in body) {
+      updates.image_url =
+        body.imageUrl === null || typeof body.imageUrl === "string"
+          ? body.imageUrl
+          : null;
+    }
 
     if ("name" in body) {
       if (!body.name || typeof body.name !== "string") {
@@ -77,7 +85,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         .from("food_items")
         .update(updates)
         .eq("id", id)
-        .select("id, name")
+        .select("id, name, image_url")
         .maybeSingle();
 
       if (error) {
@@ -92,7 +100,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     } else {
       const { data, error } = await supabase
         .from("food_items")
-        .select("id, name")
+        .select("id, name, image_url")
         .eq("id", id)
         .maybeSingle();
 
