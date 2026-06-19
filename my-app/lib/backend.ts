@@ -137,11 +137,17 @@ export async function createOrUpdatePreferenceRow(
 }
 
 export async function hydrateFoodAvailabilityRow(availability: FoodAvailabilityRow) {
-  const { data: foodItem, error } = await supabase
-    .from("food_items")
-    .select("id, name")
-    .eq("id", availability.food_item_id)
-    .single();
+  const [{ data: foodItem, error }, { count: claimedCount }] = await Promise.all([
+    supabase
+      .from("food_items")
+      .select("id, name")
+      .eq("id", availability.food_item_id)
+      .single(),
+    supabase
+      .from("food_assignments")
+      .select("*", { count: "exact", head: true })
+      .eq("food_availability_id", availability.id),
+  ]);
 
   if (error) {
     throw error;
@@ -153,6 +159,7 @@ export async function hydrateFoodAvailabilityRow(availability: FoodAvailabilityR
     quantity: availability.quantity,
     status: availability.status,
     description: availability.description,
+    claimedCount: claimedCount ?? 0,
     createdAt: availability.created_at,
     expiresAt: availability.expires_at,
     foodItem: await hydrateFoodItem(foodItem as FoodItemRow),

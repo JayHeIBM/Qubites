@@ -15,17 +15,36 @@ import {
 import { sendSlackDirectMessage } from "@/lib/slack";
 import { supabase } from "@/lib/supabase";
 
-export async function GET() {
-  const { data, error } = await supabase
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const slackId = searchParams.get("slackId");
+
+  let query = supabase
     .from("users")
     .select("id, name, slack_id, role")
     .order("slack_id", { ascending: true });
+
+  if (slackId) {
+    query = query.eq("slack_id", slackId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(await hydrateUsers(data ?? []));
+  const users = await hydrateUsers(data ?? []);
+
+  // When filtering by slackId, return the single user object (or 404)
+  if (slackId) {
+    if (users.length === 0) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+    return NextResponse.json(users[0]);
+  }
+
+  return NextResponse.json(users);
 }
 
 export async function POST(request: Request) {

@@ -16,6 +16,7 @@ interface AvailabilityRow {
   quantity: number
   status: string
   description: string | null
+  claimedCount: number
   createdAt: string
   expiresAt: string | null
   foodItem: {
@@ -67,7 +68,7 @@ function availabilityToListing(
     description: row.description ?? undefined,
     tags,
     portionsTotal: row.quantity,
-    portionsClaimed: 0,
+    portionsClaimed: row.claimedCount,
     userCanClaim: currentUserId != null && assignedAvailIds.has(row.id),
   }
 }

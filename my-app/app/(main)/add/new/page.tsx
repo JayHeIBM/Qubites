@@ -23,19 +23,20 @@ import {
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
-function ProgressHeader({ step }: { step: 1 | 2 }) {
+function ProgressHeader({ step }: { step: 1 | 2 | 3 }) {
+  const labels = ['Basic details', 'Review tags', 'Run assignments']
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-semibold text-blue-500 uppercase tracking-wide">
-          Step {step} of 2
+          Step {step} of 3
         </span>
-        <span className="text-xs text-gray-400">{step === 1 ? 'Basic details' : 'Review tags'}</span>
+        <span className="text-xs text-gray-400">{labels[step - 1]}</span>
       </div>
       <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full bg-blue-500 transition-all duration-500"
-          style={{ width: step === 1 ? '50%' : '100%' }}
+          style={{ width: `${(step / 3) * 100}%` }}
         />
       </div>
     </div>
@@ -65,6 +66,179 @@ function TagLoadingSkeleton() {
   )
 }
 
+// ── Step 3 — Run assignments ──────────────────────────────────────────────────
+
+interface AssignmentResult {
+  userId: string
+  userName: string | null
+  slackId: string
+  foodName: string
+  slackSent: boolean
+  slackError: string | null
+}
+
+interface Step3Props {
+  mealName: string
+  availabilityId: string
+  onDone: () => void
+}
+
+function Step3RunAssignments({ mealName, availabilityId, onDone }: Step3Props) {
+  const [running, setRunning] = useState(false)
+  const [ran, setRan] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [assignments, setAssignments] = useState<AssignmentResult[]>([])
+
+  async function handleRun() {
+    setRunning(true)
+    setApiError(null)
+    setAssignments([])
+    try {
+      const res = await fetch('/api/assignments/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ availabilityId }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setApiError(data.error ?? 'Unknown error.')
+        return
+      }
+      setAssignments(data.assignments ?? [])
+      setRan(true)
+    } catch {
+      setApiError('Network error. Please try again.')
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  const slackOk = assignments.filter(a => a.slackSent).length
+  const slackFail = assignments.filter(a => !a.slackSent).length
+
+  return (
+    <div className="flex flex-col gap-5">
+
+      {/* Meal created confirmation */}
+      <div className="flex items-start gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3.5">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-green-600 mt-0.5" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div>
+          <p className="text-sm font-semibold text-green-800">"{mealName}" is live!</p>
+          <p className="text-xs text-green-700 mt-0.5">The meal has been created and is marked as available.</p>
+        </div>
+      </div>
+
+      {/* Explanation — hidden once ran */}
+      {!ran && (
+        <div>
+          <h2 className="text-base font-bold text-gray-900 mb-1">Notify matched employees</h2>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Run the raffle to match eligible employees to this meal based on their dietary
+            preferences and allergies. Each matched employee will receive a personal Slack DM
+            with a claim link.
+          </p>
+        </div>
+      )}
+
+      {/* API error */}
+      {apiError && (
+        <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+          <span className="font-bold flex-shrink-0">✕</span>
+          <span>{apiError}</span>
+        </div>
+      )}
+
+      {/* Results log */}
+      {ran && (
+        <div className="flex flex-col gap-3">
+          {/* Summary */}
+          <div className={`rounded-xl border px-4 py-3 text-sm ${
+            assignments.length === 0
+              ? 'bg-blue-50 border-blue-200 text-blue-700'
+              : slackFail === 0
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-orange-50 border-orange-200 text-orange-800'
+          }`}>
+            {assignments.length === 0
+              ? 'No eligible employees matched this meal\'s dietary filters.'
+              : `${assignments.length} employee${assignments.length !== 1 ? 's' : ''} matched — ${slackOk} Slack DM${slackOk !== 1 ? 's' : ''} sent${slackFail > 0 ? `, ${slackFail} failed` : ''}.`
+            }
+          </div>
+
+          {/* Per-user rows */}
+          {assignments.length > 0 && (
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              {assignments.map((a, i) => (
+                <div
+                  key={a.userId}
+                  className={`flex items-center gap-3 px-4 py-3 text-sm ${i > 0 ? 'border-t border-gray-100' : ''}`}
+                >
+                  {/* Status icon */}
+                  <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                    a.slackSent ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                  }`}>
+                    {a.slackSent ? '✓' : '✕'}
+                  </span>
+
+                  {/* Name + Slack ID */}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-gray-900">{a.userName ?? 'Unknown'}</span>
+                    <span className="text-gray-400 ml-2 text-xs font-mono">{a.slackId}</span>
+                  </div>
+
+                  {/* Slack status */}
+                  <span className={`flex-shrink-0 text-xs font-medium ${
+                    a.slackSent ? 'text-green-600' : 'text-red-500'
+                  }`}>
+                    {a.slackSent ? 'DM sent' : a.slackError ?? 'DM failed'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Run button — hidden once ran successfully with assignments */}
+      {!(ran && assignments.length > 0 && slackFail === 0) && (
+        <button
+          type="button"
+          onClick={handleRun}
+          disabled={running}
+          className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 active:scale-95 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-sm"
+        >
+          {running ? (
+            <>
+              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+              </svg>
+              Running raffle…
+            </>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 3l14 9-14 9V3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="currentColor" />
+              </svg>
+              {ran ? 'Run again' : 'Run raffle & notify employees'}
+            </>
+          )}
+        </button>
+      )}
+
+      {/* Done / Skip */}
+      <button
+        type="button"
+        onClick={onDone}
+        className="w-full py-3 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
+      >
+        {ran ? 'Done' : 'Skip for now'}
+      </button>
+    </div>
+  )
+}
+
 // ── API row shape from /api/chef/meals ────────────────────────────────────────
 
 interface ChefMealRow {
@@ -87,7 +261,7 @@ function NewListingInner() {
   const searchParams = useSearchParams()
   const copyFromId   = searchParams.get('copyFrom')
 
-  const [step, setStep]           = useState<1 | 2>(1)
+  const [step, setStep]           = useState<1 | 2 | 3>(1)
   const [form, setForm]           = useState<NewListingForm>(makeEmptyForm)
   const [tags, setTags]           = useState<TagConfirmation>(() =>
     emptyTagConfirmation(allergyColumns, dietaryRestrictionColumns, cuisineColumns)
@@ -97,6 +271,10 @@ function NewListingInner() {
   const [tagsError, setTagsError]       = useState<string | null>(null)
   const [submitting, setSubmitting]     = useState(false)
   const [submitError, setSubmitError]   = useState<string | null>(null)
+
+  // Set after meal is created — used by step 3
+  const [createdMealName, setCreatedMealName]           = useState('')
+  const [createdAvailabilityId, setCreatedAvailabilityId] = useState('')
 
   // ── Load current user's chefId ──────────────────────────────────────────────
   const [chefId, setChefId] = useState<string | null>(null)
@@ -111,10 +289,10 @@ function NewListingInner() {
         const slackId = authUser.user_metadata?.slack_id as string | undefined
         if (!slackId) return
 
-        const res = await fetch('/api/users')
-        const users = (await res.json()) as Array<{ id: string; slackId: string }>
-        const me = users.find((u) => u.slackId === slackId)
-        if (me) setChefId(me.id)
+        const res = await fetch(`/api/users?slackId=${encodeURIComponent(slackId)}`)
+        if (!res.ok) return
+        const me = (await res.json()) as { id: string; slackId: string }
+        setChefId(me.id)
       } catch {
         // silently ignore — submit will surface the error
       }
@@ -128,8 +306,20 @@ function NewListingInner() {
 
     async function fetchCopySource() {
       try {
-        // copyFromId is the food_availability id; fetch via chef meals to get tags
-        const res = await fetch(`/api/chef/meals`)
+        const supabase = createClient()
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        const slackId = authUser?.user_metadata?.slack_id as string | undefined
+        const chefIdRes = slackId
+          ? await fetch(`/api/users?slackId=${encodeURIComponent(slackId)}`)
+          : null
+        const chefUser = chefIdRes?.ok
+          ? (await chefIdRes.json()) as { id: string }
+          : null
+
+        const url = chefUser
+          ? `/api/chef/meals?chefId=${encodeURIComponent(chefUser.id)}`
+          : `/api/chef/meals`
+        const res = await fetch(url)
         const data = (await res.json()) as { meals: ChefMealRow[] }
         const source = data.meals?.find((m: ChefMealRow) => m.id === copyFromId)
         if (!source) return
@@ -145,7 +335,6 @@ function NewListingInner() {
           imagePreviewUrl: null,
         })
 
-        // Build copied tag confirmation from foodItem tags
         if (source.foodItem) {
           const copiedTags = [
             ...source.foodItem.allergens.map((a) => ({
@@ -175,12 +364,10 @@ function NewListingInner() {
     fetchCopySource()
   }, [copyFromId])
 
-  // ── Patch helper ────────────────────────────────────────────────────────────
   function patchForm(patch: Partial<NewListingForm>) {
     setForm(prev => ({ ...prev, ...patch }))
   }
 
-  // ── Advance to Step 2 — call Ollama (unless it's a copy) ───────────────────
   async function handleAdvanceToStep2() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setStep(2)
@@ -207,7 +394,6 @@ function NewListingInner() {
     }
   }
 
-  // ── Tag toggle ──────────────────────────────────────────────────────────────
   function toggleTag(groupKey: keyof TagConfirmation, tagKey: string) {
     setTags(prev => {
       const current = prev[groupKey][tagKey] ?? 'none'
@@ -219,7 +405,7 @@ function NewListingInner() {
     })
   }
 
-  // ── Submit — POST to /api/chef/meals ────────────────────────────────────────
+  // ── Submit — POST to /api/chef/meals, then advance to step 3 ────────────────
   async function handleSubmit() {
     setSubmitError(null)
 
@@ -263,7 +449,12 @@ function NewListingInner() {
         return
       }
 
-      router.push('/add')
+      const created = await res.json()
+      // `created.id` is the food_availability row id
+      setCreatedMealName(form.title)
+      setCreatedAvailabilityId(created.id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setStep(3)
     } catch {
       setSubmitError('Network error. Please try again.')
     } finally {
@@ -274,25 +465,29 @@ function NewListingInner() {
   return (
     <div className="mx-auto max-w-xl px-4 py-6 sm:py-8">
 
-      {/* Back nav */}
-      <button
-        type="button"
-        onClick={() => step === 2 ? (setStep(1), window.scrollTo({ top: 0, behavior: 'smooth' })) : router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5 transition-colors"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        {step === 2 ? 'Back to details' : 'My listings'}
-      </button>
+      {/* Back nav — hidden on step 3 */}
+      {step !== 3 && (
+        <button
+          type="button"
+          onClick={() => step === 2 ? (setStep(1), window.scrollTo({ top: 0, behavior: 'smooth' })) : router.back()}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5 transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {step === 2 ? 'Back to details' : 'My listings'}
+        </button>
+      )}
 
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-          {isCopied ? 'Copy listing' : 'New listing'}
+          {step === 3 ? 'Meal created' : isCopied ? 'Copy listing' : 'New listing'}
         </h1>
         <p className="text-sm text-gray-400 mt-0.5">
-          {step === 1 ? 'Fill in the basic details' : 'Confirm the AI-suggested tags'}
+          {step === 1 ? 'Fill in the basic details'
+            : step === 2 ? 'Confirm the AI-suggested tags'
+            : 'Notify matched employees'}
         </p>
       </div>
 
@@ -308,7 +503,6 @@ function NewListingInner() {
 
       {step === 2 && (
         <>
-          {/* Error banners */}
           {tagsError && (
             <div className="mb-4 flex items-start gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-800">
               <span className="flex-shrink-0 font-bold">⚠</span>
@@ -338,6 +532,14 @@ function NewListingInner() {
             />
           )}
         </>
+      )}
+
+      {step === 3 && (
+        <Step3RunAssignments
+          mealName={createdMealName}
+          availabilityId={createdAvailabilityId}
+          onDone={() => router.push('/add')}
+        />
       )}
     </div>
   )

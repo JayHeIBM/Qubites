@@ -150,6 +150,13 @@ function buildAssignmentMessage(
 
 export async function POST(request: Request) {
   const baseUrl = process.env.APP_BASE_URL ?? new URL(request.url).origin;
+
+  // Optional: scope the run to a single availability row
+  const body = await request.json().catch(() => ({})) as { availabilityId?: string };
+  const availabilityId = body?.availabilityId ?? null;
+
+  console.log("[assignments/run] Starting. availabilityId:", availabilityId);
+
   const { data: users, error: usersError } = await supabase
     .from("users")
     .select(`
@@ -165,7 +172,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: usersError.message }, { status: 500 });
   }
 
-  const { data: availability, error: availabilityError } = await supabase
+  console.log("[assignments/run] Employees loaded:", users?.length ?? 0);
+
+  let availabilityQuery = supabase
     .from("food_availability")
     .select(`
       id,
@@ -183,6 +192,12 @@ export async function POST(request: Request) {
     `)
     .eq("status", "available");
 
+  if (availabilityId) {
+    availabilityQuery = availabilityQuery.eq("id", availabilityId);
+  }
+
+  const { data: availability, error: availabilityError } = await availabilityQuery;
+
   if (availabilityError) {
     return NextResponse.json(
       { error: availabilityError.message },
@@ -190,30 +205,48 @@ export async function POST(request: Request) {
     );
   }
 
+  console.log("[assignments/run] Availability rows loaded:", availability?.length ?? 0);
+  console.log("[assignments/run] Availability data:", JSON.stringify(availability, null, 2));
+
   const assignedUserIds = new Set<string>();
   const createdAssignments: Array<{
     foodAvailabilityId: string;
     userId: string;
+    userName: string | null;
     slackId: string;
     foodName: string;
+    slackSent: boolean;
+    slackError: string | null;
   }> = [];
 
   for (const food of (availability ?? []) as unknown as FoodAvailabilityRecord[]) {
-    const eligibleUsers = ((users ?? []) as Array<
+    const allUsers = ((users ?? []) as Array<
       UserProfile & {
         user_dietary_restrictions: UserProfile["dietary"][];
         user_allergies: UserProfile["allergies"][];
       }
-    >)
-      .map((user) => ({
-        id: user.id,
-        slack_id: user.slack_id,
-        name: user.name,
-        dietary: user.user_dietary_restrictions?.[0] ?? null,
-        allergies: user.user_allergies?.[0] ?? null,
-      }))
+    >).map((user) => ({
+      id: user.id,
+      slack_id: user.slack_id,
+      name: user.name,
+      dietary: user.user_dietary_restrictions?.[0] ?? null,
+      allergies: user.user_allergies?.[0] ?? null,
+    }));
+
+    console.log(`[assignments/run] Food: ${food.id} (${food.food_items?.name}), quantity: ${food.quantity}`);
+    console.log(`[assignments/run] food_items joined:`, JSON.stringify(food.food_items));
+
+    const eligibleUsers = allUsers
       .filter((user) => !assignedUserIds.has(user.id))
-      .filter((user) => userMatchesFood(user, food));
+      .filter((user) => {
+        const matches = userMatchesFood(user, food);
+        if (!matches) {
+          console.log(`[assignments/run] User ${user.id} (${user.name}) excluded. dietary:`, JSON.stringify(user.dietary), "allergies:", JSON.stringify(user.allergies));
+        }
+        return matches;
+      });
+
+    console.log(`[assignments/run] Eligible users for food ${food.id}:`, eligibleUsers.length);
 
     const selectedUsers = shuffle(eligibleUsers).slice(0, food.quantity);
 
@@ -235,17 +268,28 @@ export async function POST(request: Request) {
 
       const claimLink = buildClaimLink(baseUrl, assignment.id, user.id, food.expires_at);
 
-      await sendSlackDirectMessage(
-        user.slack_id,
-        buildAssignmentMessage(user.name, food, claimLink)
-      );
+      let slackSent = false;
+      let slackError: string | null = null;
+      try {
+        await sendSlackDirectMessage(
+          user.slack_id,
+          buildAssignmentMessage(user.name, food, claimLink)
+        );
+        slackSent = true;
+      } catch (err) {
+        slackError = err instanceof Error ? err.message : "Unknown Slack error";
+        console.error("[assignments/run] Slack DM failed for user", user.id, slackError);
+      }
 
       assignedUserIds.add(user.id);
       createdAssignments.push({
         foodAvailabilityId: food.id,
         userId: user.id,
+        userName: user.name,
         slackId: user.slack_id,
         foodName: food.food_items?.name ?? "Unknown food",
+        slackSent,
+        slackError,
       });
     }
   }

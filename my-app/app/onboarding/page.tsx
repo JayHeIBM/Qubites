@@ -51,23 +51,17 @@ export default function OnboardingPage() {
           return
         }
 
-        const response = await fetch('/api/users')
+        const response = await fetch(`/api/users?slackId=${encodeURIComponent(slackId)}`)
         if (!response.ok) {
           throw new Error('Failed to load user profile.')
         }
 
-        const users = (await response.json()) as Array<{
+        const currentUser = (await response.json()) as {
           id: string
           slackId: string
           cuisines: string[]
           dietaryRestrictions: string[]
           allergies: string[]
-        }>
-
-        const currentUser = users.find((candidate) => candidate.slackId === slackId)
-
-        if (!currentUser) {
-          throw new Error('User profile not found.')
         }
 
         setUserProfile({

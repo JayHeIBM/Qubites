@@ -81,12 +81,6 @@ export default function AddPage() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
 
-  // Run-assignment state
-  const [runningAssignment, setRunningAssignment] = useState(false)
-  const [assignmentResult, setAssignmentResult] = useState<{
-    type: 'success' | 'info' | 'error'
-    message: string
-  } | null>(null)
 
   // ── Load user + listings ──────────────────────────────────────────────────
 
@@ -110,10 +104,9 @@ export default function AddPage() {
         const slackId = authUser.user_metadata?.slack_id as string | undefined
         if (!slackId) { setLoading(false); return }
 
-        const usersRes = await fetch('/api/users')
-        const users = (await usersRes.json()) as Array<{ id: string; slackId: string }>
-        const me = users.find((u) => u.slackId === slackId)
-        if (!me) { setLoading(false); return }
+        const usersRes = await fetch(`/api/users?slackId=${encodeURIComponent(slackId)}`)
+        if (!usersRes.ok) { setLoading(false); return }
+        const me = (await usersRes.json()) as { id: string; slackId: string }
 
         setMyId(me.id)
         await loadListings(me.id)
@@ -125,33 +118,6 @@ export default function AddPage() {
     }
     init()
   }, [router, loadListings])
-
-  // ── Run assignments ───────────────────────────────────────────────────────
-
-  async function handleRunAssignments() {
-    setRunningAssignment(true)
-    setAssignmentResult(null)
-    try {
-      const res = await fetch('/api/assignments/run', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) {
-        setAssignmentResult({ type: 'error', message: data.error ?? 'Unknown error.' })
-        return
-      }
-      const count = data.assignments?.length ?? 0
-      setAssignmentResult(
-        count > 0
-          ? { type: 'success', message: `${count} assignment${count !== 1 ? 's' : ''} made — Slack DMs sent.` }
-          : { type: 'info', message: 'No eligible matches found. Check dietary filters and availability status.' }
-      )
-      // Refresh listing counts after run
-      if (myId) await loadListings(myId)
-    } catch {
-      setAssignmentResult({ type: 'error', message: 'Network error running assignments.' })
-    } finally {
-      setRunningAssignment(false)
-    }
-  }
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -176,12 +142,6 @@ export default function AddPage() {
     )
   }
 
-  const resultColors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-    error: 'bg-red-50 border-red-200 text-red-700',
-  }
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-5 sm:py-7 flex flex-col gap-5">
 
@@ -193,64 +153,17 @@ export default function AddPage() {
             <p className="text-sm text-gray-400 mt-0.5">Your upload history</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Run assignments */}
-            <button
-              onClick={handleRunAssignments}
-              disabled={runningAssignment}
-              className="flex-shrink-0 flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 active:scale-95 transition-all text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm"
-              title="Match employees to available meals and send Slack DMs"
-            >
-              {runningAssignment ? (
-                <>
-                  <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
-                  </svg>
-                  <span className="hidden sm:inline">Running…</span>
-                </>
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M5 3l14 9-14 9V3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="currentColor" />
-                  </svg>
-                  <span className="hidden sm:inline">Run assignments</span>
-                  <span className="sm:hidden">Run</span>
-                </>
-              )}
-            </button>
-
-            {/* New listing */}
-            <button
-              onClick={() => router.push('/add/new')}
-              className="flex-shrink-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              <span className="hidden sm:inline">New listing</span>
-              <span className="sm:hidden">New</span>
-            </button>
-          </div>
+          <button
+            onClick={() => router.push('/add/new')}
+            className="flex-shrink-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <span className="hidden sm:inline">New listing</span>
+            <span className="sm:hidden">New</span>
+          </button>
         </div>
-
-        {/* Assignment result banner */}
-        {assignmentResult && (
-          <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm ${resultColors[assignmentResult.type]}`}>
-            <span className="flex-shrink-0 font-bold">
-              {assignmentResult.type === 'success' ? '✓' : assignmentResult.type === 'error' ? '✕' : 'ℹ'}
-            </span>
-            <span>{assignmentResult.message}</span>
-            <button
-              onClick={() => setAssignmentResult(null)}
-              className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
-              aria-label="Dismiss"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        )}
 
         <SearchBar
           value={query}
