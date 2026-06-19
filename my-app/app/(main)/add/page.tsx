@@ -21,6 +21,7 @@ interface ChefMealRow {
   foodItem: {
     id: string
     name: string
+    imageUrl: string | null
     cuisines: string[]
     dietaryTags: string[]
     allergens: string[]
@@ -48,6 +49,7 @@ function chefMealToListing(row: ChefMealRow): FoodListing {
   return {
     id: row.id,
     title: row.name,
+    imageUrl: row.foodItem?.imageUrl ?? undefined,
     type: 'leftover',
     location: '',
     postedAt: row.createdAt,
