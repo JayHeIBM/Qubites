@@ -1,54 +1,104 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase-browser'
 import FoodCard from '@/app/components/food/FoodCard'
-import { MOCK_LISTINGS, MOCK_USER } from '@/app/components/food/fixtures'
 import FilterBar from '@/app/components/home/FilterBar'
 import type { ActiveFilters, FilterKey } from '@/app/components/home/FilterBar'
 import type { FoodListing } from '@/app/components/food/types'
 
-// ── Filtering logic ───────────────────────────────────────────────────────────
+// ── API → FoodListing adapter ─────────────────────────────────────────────────
+
+interface AvailabilityRow {
+  id: string
+  chefId: string
+  quantity: number
+  status: string
+  description: string | null
+  createdAt: string
+  expiresAt: string | null
+  foodItem: {
+    id: string
+    name: string
+    cuisines: string[]
+    dietaryTags: string[]
+    allergens: string[]
+  }
+}
+
+interface UserProfile {
+  id: string
+  slackId: string
+  name: string | null
+  cuisines: string[]
+  dietaryRestrictions: string[]
+  allergies: string[]
+}
+
+interface AssignmentRow {
+  food_availability_id: string
+  user_id: string
+  status: string
+}
 
 /**
- * Returns true if the listing should be shown given the current filter state.
- *
- * Design-doc rules:
- *   - Fully claimed listings are always hidden.
- *   - Expired listings are always hidden.
- *   - "Hide my allergens"  → exclude listings that contain any of the user's allergens.
- *   - "My restrictions"    → exclude listings that violate the user's restrictions
- *                            (i.e. the listing has a restriction tag the user has set).
- *   - "My preferences"     → show ONLY listings that match at least one user preference.
- *   - Filters are additive: all active filters must pass simultaneously.
+ * Maps an availability row to the FoodListing shape used by FoodCard.
+ * assignedUserIds = the set of availability IDs assigned to the current user.
  */
+function availabilityToListing(
+  row: AvailabilityRow,
+  currentUserId: string | null,
+  assignedAvailIds: Set<string>
+): FoodListing {
+  const tags: FoodListing['tags'] = [
+    ...row.foodItem.allergens.map((a) => ({ label: a.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), kind: 'allergen' as const })),
+    ...row.foodItem.dietaryTags.map((r) => ({ label: r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), kind: 'restriction' as const })),
+    ...row.foodItem.cuisines.map((c) => ({ label: c.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), kind: 'preference' as const })),
+  ]
+
+  return {
+    id: row.id,
+    title: row.foodItem.name,
+    type: 'leftover',
+    location: 'See Slack message',
+    postedAt: row.createdAt,
+    expiresAt: row.expiresAt ?? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    description: row.description ?? undefined,
+    tags,
+    portionsTotal: row.quantity,
+    portionsClaimed: 0,
+    userCanClaim: currentUserId != null && assignedAvailIds.has(row.id),
+  }
+}
+
+// ── Filtering logic ───────────────────────────────────────────────────────────
+
 function applyFilters(
   listing: FoodListing,
   filters: ActiveFilters,
-  user: typeof MOCK_USER,
+  user: { allergens: string[]; restrictions: string[]; preferences: string[] }
 ): boolean {
-  // Always hide fully claimed
   if (listing.portionsClaimed >= listing.portionsTotal) return false
-
-  // Always hide expired
   if (new Date(listing.expiresAt).getTime() <= Date.now()) return false
 
-  const allergenLabels    = listing.tags.filter(t => t.kind === 'allergen').map(t => t.label)
-  const restrictionLabels = listing.tags.filter(t => t.kind === 'restriction').map(t => t.label)
-  const preferenceLabels  = listing.tags.filter(t => t.kind === 'preference').map(t => t.label)
+  const allergenLabels = listing.tags.filter(t => t.kind === 'allergen').map(t => t.label.toLowerCase())
+  const restrictionLabels = listing.tags.filter(t => t.kind === 'restriction').map(t => t.label.toLowerCase())
+  const preferenceLabels = listing.tags.filter(t => t.kind === 'preference').map(t => t.label.toLowerCase())
 
   if (filters.allergens) {
-    const clash = allergenLabels.some(l => user.allergens.includes(l))
-    if (clash) return false
+    const userAllergenLabels = user.allergens.map(a => a.replace(/_/g, ' ').toLowerCase())
+    if (allergenLabels.some(l => userAllergenLabels.includes(l))) return false
   }
 
   if (filters.restrictions) {
-    const clash = restrictionLabels.some(l => user.restrictions.includes(l))
-    if (clash) return false
+    const userRestrictionLabels = user.restrictions.map(r => r.replace(/_/g, ' ').toLowerCase())
+    if (restrictionLabels.some(l => userRestrictionLabels.includes(l))) return false
   }
 
   if (filters.preferences) {
-    const match = preferenceLabels.some(l => user.preferences.includes(l))
-    if (!match) return false
+    const userPreferenceLabels = user.preferences.map(p => p.replace(/_/g, ' ').toLowerCase())
+    if (!preferenceLabels.some(l => userPreferenceLabels.includes(l))) return false
   }
 
   if (filters.claimable) {
@@ -58,11 +108,6 @@ function applyFilters(
   return true
 }
 
-/**
- * Sort order per design doc:
- *   1. Free Food always at the top (open to all)
- *   2. Then by expiry ascending (soonest expiring first)
- */
 function sortListings(listings: FoodListing[]): FoodListing[] {
   return [...listings].sort((a, b) => {
     if (a.type === 'free_food' && b.type !== 'free_food') return -1
@@ -74,25 +119,111 @@ function sortListings(listings: FoodListing[]): FoodListing[] {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  // TODO: replace MOCK_LISTINGS with backend fetch once auth + API are wired up
-  const allListings = MOCK_LISTINGS
-  const user = MOCK_USER
+  const router = useRouter()
+  const [allListings, setAllListings] = useState<FoodListing[]>([])
+  const [currentUser, setCurrentUser] = useState<{
+    allergens: string[]
+    restrictions: string[]
+    preferences: string[]
+  }>({ allergens: [], restrictions: [], preferences: [] })
+  const [loading, setLoading] = useState(true)
 
   const [filters, setFilters] = useState<ActiveFilters>({
-    allergens:    false,
+    allergens: false,
     restrictions: false,
-    preferences:  false,
-    claimable:    false,
+    preferences: false,
+    claimable: false,
   })
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createClient()
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
+
+        if (!authUser) {
+          router.replace('/login')
+          return
+        }
+
+        const slackId = authUser.user_metadata?.slack_id as string | undefined
+
+        // Fetch availability and users in parallel
+        const [availRes, usersRes] = await Promise.all([
+          fetch('/api/food-availability'),
+          fetch('/api/users'),
+        ])
+
+        const availability: AvailabilityRow[] = await availRes.json()
+        const users: UserProfile[] = await usersRes.json()
+
+        // Find current user profile
+        const me = slackId ? users.find((u) => u.slackId === slackId) : null
+
+        // Fetch assignments for current user (to determine userCanClaim)
+        let assignedAvailIds = new Set<string>()
+        if (me) {
+          const { data: myAssignments } = await supabase
+            .from('food_assignments')
+            .select('food_availability_id, status')
+            .eq('user_id', me.id)
+            .eq('status', 'pending')
+
+          if (myAssignments) {
+            assignedAvailIds = new Set(
+              (myAssignments as AssignmentRow[]).map((a) => a.food_availability_id)
+            )
+          }
+        }
+
+        // Only show 'available' rows
+        const availableRows = Array.isArray(availability)
+          ? availability.filter((row) => row.status === 'available')
+          : []
+
+        const listings = availableRows.map((row) =>
+          availabilityToListing(row, me?.id ?? null, assignedAvailIds)
+        )
+
+        if (me) {
+          setCurrentUser({
+            allergens: me.allergies,
+            restrictions: me.dietaryRestrictions,
+            preferences: me.cuisines,
+          })
+        }
+
+        setAllListings(listings)
+      } catch (err) {
+        console.error('[home] Failed to load listings:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [router])
 
   function toggleFilter(key: FilterKey) {
     setFilters(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const visibleListings = useMemo(
-    () => sortListings(allListings.filter(l => applyFilters(l, filters, user))),
-    [allListings, filters, user],
+    () => sortListings(allListings.filter(l => applyFilters(l, filters, currentUser))),
+    [allListings, filters, currentUser]
   )
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-5 sm:py-7">
+        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500 shadow-sm">
+          Loading available meals…
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-5 sm:py-7 flex flex-col gap-4">
@@ -106,7 +237,6 @@ export default function HomePage() {
           </span>
         </div>
 
-        {/* Filter bar */}
         <FilterBar
           active={filters}
           onToggle={toggleFilter}

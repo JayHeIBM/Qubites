@@ -26,6 +26,7 @@ type FoodAvailabilityRow = {
   chef_id: string;
   quantity: number;
   status: string;
+  description: string | null;
   created_at: string;
   expires_at: string | null;
 };
@@ -124,7 +125,8 @@ export async function createOrUpdatePreferenceRow(
     return;
   }
 
-  const response = (await supabase.from(table).upsert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = (await (supabase.from(table) as any).upsert({
     [foreignKey]: id,
     ...payload,
   })) as PostgrestSingleResponse<null>;
@@ -150,6 +152,7 @@ export async function hydrateFoodAvailabilityRow(availability: FoodAvailabilityR
     chefId: availability.chef_id,
     quantity: availability.quantity,
     status: availability.status,
+    description: availability.description,
     createdAt: availability.created_at,
     expiresAt: availability.expires_at,
     foodItem: await hydrateFoodItem(foodItem as FoodItemRow),

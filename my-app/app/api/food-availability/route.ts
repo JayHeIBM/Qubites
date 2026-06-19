@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
   const { data, error } = await supabase
     .from("food_availability")
-    .select("id, food_item_id, chef_id, quantity, status, created_at, expires_at")
+    .select("id, food_item_id, chef_id, quantity, status, description, created_at, expires_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   const chefId = body?.chefId;
   const quantity = body?.quantity;
   const status = body?.status ?? "available";
+  const description = body?.description ?? null;
   const expiresAt = body?.expiresAt ?? null;
 
   if (!foodItemId || typeof foodItemId !== "string") {
@@ -61,9 +62,10 @@ export async function POST(request: Request) {
       chef_id: chefId,
       quantity,
       status,
+      description,
       expires_at: expiresAt,
     })
-    .select("id, food_item_id, chef_id, quantity, status, created_at, expires_at")
+    .select("id, food_item_id, chef_id, quantity, status, description, created_at, expires_at")
     .single();
 
   if (error) {

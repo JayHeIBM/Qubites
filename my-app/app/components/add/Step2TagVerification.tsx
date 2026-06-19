@@ -162,6 +162,8 @@ interface Step2Props {
   onSubmit: () => void
   /** True when form was pre-filled from a copied listing */
   isCopied: boolean
+  /** True while the listing is being submitted to the backend */
+  submitting?: boolean
 }
 
 export default function Step2TagVerification({
@@ -173,6 +175,7 @@ export default function Step2TagVerification({
   onBack,
   onSubmit,
   isCopied,
+  submitting = false,
 }: Step2Props) {
   return (
     <div className="flex flex-col gap-6">
@@ -244,9 +247,10 @@ export default function Step2TagVerification({
         <button
           type="button"
           onClick={onSubmit}
-          className="flex-1 py-3 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-sm transition-all"
+          disabled={submitting}
+          className="flex-1 py-3 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:bg-blue-300 text-white shadow-sm transition-all"
         >
-          Submit Listing
+          {submitting ? 'Submitting…' : 'Submit Listing'}
         </button>
       </div>
     </div>

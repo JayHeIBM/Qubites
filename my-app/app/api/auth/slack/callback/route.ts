@@ -101,6 +101,22 @@ export async function GET(request: Request) {
       console.error('[slack/callback] Failed to insert user row:', insertError.message)
       return NextResponse.redirect(`${origin}/login?error=db_insert_failed`)
     }
+
+    // Fetch the new user's id to seed empty preference rows
+    const { data: newRow } = await adminSupabase
+      .from('users')
+      .select('id')
+      .eq('slack_id', slackId)
+      .single()
+
+    if (newRow) {
+      // Insert empty preference rows so PATCH operations can upsert cleanly
+      await Promise.allSettled([
+        adminSupabase.from('user_cuisines').upsert({ user_id: newRow.id }),
+        adminSupabase.from('user_dietary_restrictions').upsert({ user_id: newRow.id }),
+        adminSupabase.from('user_allergies').upsert({ user_id: newRow.id }),
+      ])
+    }
   }
 
   // ── Step 4: Create / fetch a Supabase Auth user and issue a session ────────
