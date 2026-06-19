@@ -26,7 +26,7 @@ function TagButton({ tagKey, state, muted = false, onToggle }: TagButtonProps) {
   if (state === 'confirmed') {
     cls = 'bg-green-50 border-green-500 text-green-700 font-semibold'
   } else if (state === 'ai') {
-    cls = 'bg-blue-50 border-blue-400 text-blue-700 font-semibold'
+    cls = 'bg-orange-50 border-orange-400 text-orange-700 font-semibold'
   } else if (muted) {
     cls = 'bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-white'
   } else {
@@ -86,7 +86,7 @@ function TagGroup({ title, groupKey, keys, state, onToggle }: TagGroupProps) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-bold uppercase tracking-wide text-gray-600">{title}</span>
         {aiCount > 0 && (
-          <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-semibold">
+          <span className="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-semibold">
             {aiCount} suggested
           </span>
         )}
@@ -184,7 +184,7 @@ export default function Step2TagVerification({
       <div className={`rounded-xl px-4 py-3 text-sm border leading-relaxed ${
         isCopied
           ? 'bg-green-50 border-green-200 text-green-800'
-          : 'bg-blue-50 border-blue-200 text-blue-800'
+          : 'bg-orange-50 border-orange-200 text-orange-800'
       }`}>
         {isCopied ? (
           <>
@@ -248,7 +248,7 @@ export default function Step2TagVerification({
           type="button"
           onClick={onSubmit}
           disabled={submitting}
-          className="flex-1 py-3 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:bg-blue-300 text-white shadow-sm transition-all"
+          className="flex-1 py-3 rounded-xl text-sm font-semibold bg-orange-600 hover:bg-orange-700 active:scale-95 disabled:bg-orange-300 text-white shadow-sm transition-all"
         >
           {submitting ? 'Submitting…' : 'Submit Listing'}
         </button>

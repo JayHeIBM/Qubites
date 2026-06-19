@@ -28,14 +28,14 @@ function ProgressHeader({ step }: { step: 1 | 2 | 3 }) {
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold text-blue-500 uppercase tracking-wide">
+        <span className="text-xs font-semibold text-orange-500 uppercase tracking-wide">
           Step {step} of 3
         </span>
         <span className="text-xs text-gray-400">{labels[step - 1]}</span>
       </div>
-      <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full bg-blue-500 transition-all duration-500"
+          className="h-full rounded-full bg-orange-500 transition-all duration-500"
           style={{ width: `${(step / 3) * 100}%` }}
         />
       </div>
@@ -48,16 +48,16 @@ function ProgressHeader({ step }: { step: 1 | 2 | 3 }) {
 function TagLoadingSkeleton() {
   return (
     <div className="flex flex-col gap-6 animate-pulse">
-      <div className="h-14 rounded-xl bg-blue-50 border border-blue-100" />
+      <div className="h-14 rounded-xl bg-orange-50 border border-orange-100" />
       {['Allergens', 'Dietary Restrictions', 'Preferences / Cuisine'].map(title => (
         <div key={title} className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
             <div className="h-3 w-20 rounded bg-gray-200" />
-            <div className="h-4 w-16 rounded bg-blue-100" />
+            <div className="h-4 w-16 rounded bg-orange-100" />
           </div>
           <div className="flex flex-wrap gap-1.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-6 rounded-full bg-blue-100" style={{ width: `${52 + i * 14}px` }} />
+              <div key={i} className="h-6 rounded-full bg-orange-100" style={{ width: `${52 + i * 14}px` }} />
             ))}
           </div>
         </div>
@@ -156,7 +156,7 @@ function Step3RunAssignments({ mealName, availabilityId, onDone }: Step3Props) {
           {/* Summary */}
           <div className={`rounded-xl border px-4 py-3 text-sm ${
             assignments.length === 0
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
+              ? 'bg-orange-50 border-orange-200 text-orange-700'
               : slackFail === 0
                 ? 'bg-green-50 border-green-200 text-green-800'
                 : 'bg-orange-50 border-orange-200 text-orange-800'

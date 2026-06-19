@@ -25,7 +25,7 @@ export default function WelcomeStep({ onNext }: WelcomeStepProps) {
       {/* CTA */}
       <button
         onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
+        className="w-full bg-orange-600 hover:bg-orange-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
       >
         Get Started
       </button>

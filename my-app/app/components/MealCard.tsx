@@ -23,7 +23,7 @@ export default function MealCard({ meal }: MealCardProps) {
   })
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-blue-100">
+    <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-orange-100">
       {meal.image_url && (
         <img
           src={meal.image_url}
@@ -32,12 +32,12 @@ export default function MealCard({ meal }: MealCardProps) {
         />
       )}
       {!meal.image_url && (
-        <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-6xl">
+        <div className="w-full h-40 bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-6xl">
           🍲
         </div>
       )}
       <div className="p-8">
-        <h1 className="text-3xl font-bold text-blue-900 mb-2">{meal.name}</h1>
+        <h1 className="text-3xl font-bold text-orange-900 mb-2">{meal.name}</h1>
         <p className="text-gray-600 text-base mb-5">{meal.description}</p>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -47,17 +47,17 @@ export default function MealCard({ meal }: MealCardProps) {
         </div>
 
         <div className="flex items-center justify-between mb-8">
-          <span className="text-sm text-blue-400 font-medium">
+          <span className="text-sm text-orange-400 font-medium">
             🕐 Available until {until}
           </span>
-          <span className="text-sm bg-blue-50 text-blue-700 font-semibold px-3 py-1 rounded-full border border-blue-200">
+          <span className="text-sm bg-orange-50 text-orange-700 font-semibold px-3 py-1 rounded-full border border-orange-200">
             {meal.quantity} serving{meal.quantity !== 1 ? 's' : ''} left
           </span>
         </div>
 
         <Link
           href={`/confirm?mealId=${meal.id}`}
-          className="block w-full text-center bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-bold py-4 rounded-2xl text-lg shadow-md hover:shadow-lg"
+          className="block w-full text-center bg-orange-600 hover:bg-orange-700 active:scale-95 transition-all text-white font-bold py-4 rounded-2xl text-lg shadow-md hover:shadow-lg"
         >
           Claim this meal →
         </Link>

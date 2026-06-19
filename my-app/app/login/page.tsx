@@ -15,7 +15,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-blue-600 to-blue-800">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-600 to-orange-800">
       <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm">
         <QubitesBrand />
         <SlackSignInButton onClick={handleSlackSignIn} loading={loading} />

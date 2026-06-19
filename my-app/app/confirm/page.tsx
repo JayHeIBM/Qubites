@@ -108,20 +108,20 @@ function ConfirmContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <div className="text-blue-400 text-lg">Loading…</div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+        <div className="text-orange-400 text-lg">Loading…</div>
       </div>
     )
   }
 
   if (error && !detail) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center border border-red-100">
           <div className="text-5xl mb-4">⚠️</div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Link expired or invalid</h1>
           <p className="text-sm text-gray-500 mb-6">{error}</p>
-          <Link href="/home" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
+          <Link href="/home" className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
             Go home
           </Link>
         </div>
@@ -131,15 +131,15 @@ function ConfirmContent() {
 
   if (claimed) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center border border-blue-100">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center border border-orange-100">
           <div className="text-6xl mb-4">🎉</div>
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">You&apos;re all set!</h1>
+          <h1 className="text-3xl font-bold text-orange-900 mb-2">You&apos;re all set!</h1>
           <p className="text-gray-500 mb-2">
-            Enjoy your <span className="font-semibold text-blue-700">{detail?.foodName}</span>!
+            Enjoy your <span className="font-semibold text-orange-700">{detail?.foodName}</span>!
           </p>
-          <p className="text-sm text-blue-400 mb-8">Head over to the pickup spot when it&apos;s ready.</p>
-          <Link href="/home" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
+          <p className="text-sm text-orange-400 mb-8">Head over to the pickup spot when it&apos;s ready.</p>
+          <Link href="/home" className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 py-3 rounded-2xl transition-all active:scale-95">
             Back to home
           </Link>
         </div>
@@ -148,12 +148,12 @@ function ConfirmContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-blue-100">
-        <Link href="/home" className="text-blue-400 hover:text-blue-600 text-sm mb-6 inline-block transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center px-4">
+      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-orange-100">
+        <Link href="/home" className="text-orange-400 hover:text-orange-600 text-sm mb-6 inline-block transition-colors">
           ← Back
         </Link>
-        <h1 className="text-2xl font-bold text-blue-900 mb-1">Confirm your claim</h1>
+        <h1 className="text-2xl font-bold text-orange-900 mb-1">Confirm your claim</h1>
         <p className="text-sm text-gray-400 mb-6">You have been matched with this meal.</p>
 
         {/* Meal image */}
@@ -162,13 +162,13 @@ function ConfirmContent() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={detail.imageUrl} alt={detail.foodName} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl select-none">
+            <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-4xl select-none">
               🍽️
             </div>
           )}
         </div>
 
-        <h2 className="text-xl font-bold text-blue-900 mb-1">{detail?.foodName}</h2>
+        <h2 className="text-xl font-bold text-orange-900 mb-1">{detail?.foodName}</h2>
         {detail?.description && (
           <p className="text-gray-500 text-sm mb-4">{detail.description}</p>
         )}
@@ -193,7 +193,7 @@ function ConfirmContent() {
         <button
           onClick={handleClaim}
           disabled={claiming}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-bold py-4 rounded-2xl text-lg transition-all active:scale-95 shadow-md"
+          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white font-bold py-4 rounded-2xl text-lg transition-all active:scale-95 shadow-md"
         >
           {claiming ? 'Claiming…' : 'Confirm Claim ✓'}
         </button>
@@ -205,8 +205,8 @@ function ConfirmContent() {
 export default function ConfirmPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <div className="text-blue-400 text-lg">Loading…</div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+        <div className="text-orange-400 text-lg">Loading…</div>
       </div>
     }>
       <ConfirmContent />

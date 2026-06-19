@@ -26,7 +26,7 @@ export default function ChecklistStep({
   items,
   selected,
   onChange,
-  accentBg = 'bg-blue-500',
+  accentBg = 'bg-orange-500',
   onNext,
 }: ChecklistStepProps) {
   function toggle(item: string) {
@@ -98,7 +98,7 @@ export default function ChecklistStep({
       {/* CTA */}
       <button
         onClick={onNext}
-        className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
+        className="w-full bg-orange-600 hover:bg-orange-700 active:scale-95 transition-all text-white font-semibold py-3 rounded-xl text-sm shadow-md"
       >
         Next
       </button>

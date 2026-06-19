@@ -47,7 +47,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+      className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
     />
   )
 }
@@ -56,7 +56,7 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...props}
-      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none"
+      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 bg-white shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition appearance-none"
     />
   )
 }
@@ -117,17 +117,17 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
                   selected
                     ? isGreen
                       ? 'border-green-500 bg-green-50'
-                      : 'border-blue-500 bg-blue-50'
+                      : 'border-orange-500 bg-orange-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
                 <span className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${
-                  selected ? (isGreen ? 'text-green-700' : 'text-blue-700') : 'text-gray-700'
+                  selected ? (isGreen ? 'text-green-700' : 'text-orange-700') : 'text-gray-700'
                 }`}>
                   {label}
                 </span>
                 <span className={`text-[10px] leading-tight ${
-                  selected ? (isGreen ? 'text-green-600' : 'text-blue-600') : 'text-gray-400'
+                  selected ? (isGreen ? 'text-green-600' : 'text-orange-600') : 'text-gray-400'
                 }`}>
                   {desc}
                 </span>
@@ -205,7 +205,7 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
           placeholder="Any details about the food — ingredients, freshness, etc."
           value={form.description}
           onChange={e => onChange({ description: e.target.value })}
-          className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+          className="w-full px-3 py-2.5 text-sm text-gray-900 rounded-xl border border-gray-200 bg-white shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition resize-none"
         />
       </div>
 
@@ -244,13 +244,13 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
             onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
-            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl px-4 py-8 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition text-gray-400 text-sm"
+            className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl px-4 py-8 cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition text-gray-400 text-sm"
           >
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 16V8m0 0l-3 3m3-3l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M20 16.7A4 4 0 0017 9h-.6A7 7 0 104 15.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Drag &amp; drop a photo, or <span className="text-blue-500 font-semibold">browse</span></span>
+            <span>Drag &amp; drop a photo, or <span className="text-orange-500 font-semibold">browse</span></span>
             <span className="text-xs text-gray-300">JPG, PNG · max 10 MB</span>
           </div>
         )}
@@ -268,7 +268,7 @@ export default function Step1BasicDetails({ form, onChange, onNext }: Step1Props
         type="button"
         onClick={handleNext}
         disabled={!canAdvance}
-        className="w-full py-3 rounded-xl text-sm font-semibold transition-all shadow-sm bg-blue-600 hover:bg-blue-700 active:scale-95 text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+        className="w-full py-3 rounded-xl text-sm font-semibold transition-all shadow-sm bg-orange-600 hover:bg-orange-700 active:scale-95 text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         Next: Review Tags →
       </button>

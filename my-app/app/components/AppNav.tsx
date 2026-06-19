@@ -67,7 +67,7 @@ export default function AppNav() {
       {/* ── TOP BAR (md+) ─────────────────────────────────────── */}
       <header className="hidden md:flex fixed top-0 inset-x-0 z-50 h-14 bg-white border-b border-gray-200 items-center px-6 gap-6 shadow-sm">
         {/* Wordmark */}
-        <span className="text-lg font-bold text-blue-700 tracking-tight mr-auto">
+        <span className="text-lg font-bold text-orange-700 tracking-tight mr-auto">
           Bob-a-bite 🍽️
         </span>
 
@@ -76,8 +76,8 @@ export default function AppNav() {
           href="/home"
           className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-lg ${
             isActive('/home')
-              ? 'bg-blue-50 text-blue-700'
-              : 'text-gray-500 hover:text-blue-700 hover:bg-blue-50'
+              ? 'bg-orange-50 text-orange-700'
+              : 'text-gray-500 hover:text-orange-700 hover:bg-orange-50'
           }`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -92,8 +92,8 @@ export default function AppNav() {
           href="/add"
           className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors ${
             isActive('/add')
-              ? 'bg-blue-700 text-white'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? 'bg-orange-700 text-white'
+              : 'bg-orange-600 hover:bg-orange-700 text-white'
           }`}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -107,8 +107,8 @@ export default function AppNav() {
           href="/profile"
           className={`flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-lg ${
             isActive('/profile')
-              ? 'bg-blue-50 text-blue-700'
-              : 'text-gray-500 hover:text-blue-700 hover:bg-blue-50'
+              ? 'bg-orange-50 text-orange-700'
+              : 'text-gray-500 hover:text-orange-700 hover:bg-orange-50'
           }`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -125,7 +125,7 @@ export default function AppNav() {
         <Link
           href="/home"
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
-            isActive('/home') ? 'text-blue-700' : 'text-gray-400 hover:text-blue-600'
+            isActive('/home') ? 'text-orange-700' : 'text-gray-400 hover:text-orange-600'
           }`}
         >
           {NAV_ITEMS[0].icon(isActive('/home'))}
@@ -140,14 +140,14 @@ export default function AppNav() {
         >
           <span
             className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-colors ${
-              isActive('/add') ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'
+              isActive('/add') ? 'bg-orange-700' : 'bg-orange-600 hover:bg-orange-700'
             } -mt-5`}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
           </span>
-          <span className={`text-xs font-medium mt-0.5 ${isActive('/add') ? 'text-blue-700' : 'text-gray-400'}`}>
+          <span className={`text-xs font-medium mt-0.5 ${isActive('/add') ? 'text-orange-700' : 'text-gray-400'}`}>
             Add
           </span>
         </Link>
@@ -156,7 +156,7 @@ export default function AppNav() {
         <Link
           href="/profile"
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
-            isActive('/profile') ? 'text-blue-700' : 'text-gray-400 hover:text-blue-600'
+            isActive('/profile') ? 'text-orange-700' : 'text-gray-400 hover:text-orange-600'
           }`}
         >
           {NAV_ITEMS[1].icon(isActive('/profile'))}

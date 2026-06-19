@@ -5,7 +5,7 @@ interface StatBoxProps {
 }
 
 const COLOR: Record<StatBoxProps['color'], string> = {
-  blue:   'text-blue-600',
+  blue:   'text-orange-600',
   purple: 'text-purple-600',
   green:  'text-green-600',
 }

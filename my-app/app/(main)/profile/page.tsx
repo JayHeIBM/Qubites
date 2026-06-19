@@ -22,7 +22,7 @@ function Avatar({ name }: { name: string }) {
     .toUpperCase()
 
   return (
-    <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0 select-none">
+    <div className="w-14 h-14 rounded-full bg-orange-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0 select-none">
       {initials}
     </div>
   )
@@ -58,7 +58,7 @@ function EditRow({
       onClick={onToggle}
       className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border transition-colors text-left ${
         open
-          ? 'bg-blue-50 border-blue-300'
+          ? 'bg-orange-50 border-orange-300'
           : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
       }`}
     >

@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #f0f5ff;
-  --color-foreground: #1e3a5f;
+  --color-background: #fff7ed;
+  --color-foreground: #431407;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 :root {
-  --background: #f0f5ff;
-  --foreground: #1e3a5f;
+  --background: #fff7ed;
+  --foreground: #431407;
 }
 
 body {
@@ -25,6 +25,6 @@ html {
 
 /* Custom focus ring */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #ea580c;
   outline-offset: 2px;
 }

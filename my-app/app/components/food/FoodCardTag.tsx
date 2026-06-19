@@ -17,7 +17,7 @@ const KIND_STYLE: Record<FoodTag['kind'], string> = {
 export const TYPE_BADGE: Record<ListingType, { label: string; cls: string }> = {
   leftover: {
     label: 'Leftover',
-    cls: 'bg-blue-50 text-blue-700 border border-blue-200',
+    cls: 'bg-orange-50 text-orange-700 border border-orange-200',
   },
   free_food: {
     label: 'Free Food',

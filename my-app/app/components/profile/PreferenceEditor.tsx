@@ -104,7 +104,7 @@ export default function PreferenceEditor({
         </button>
         <button
           onClick={() => onSave([...selected])}
-          className="flex-1 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white transition-all shadow-sm"
+          className="flex-1 py-2 rounded-xl text-sm font-semibold bg-orange-600 hover:bg-orange-700 active:scale-95 text-white transition-all shadow-sm"
         >
           Save
         </button>

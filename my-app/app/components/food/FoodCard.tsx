@@ -72,7 +72,7 @@ function ProgressBar({
       <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
-            full ? 'bg-gray-300' : 'bg-blue-500'
+            full ? 'bg-gray-300' : 'bg-orange-500'
           }`}
           style={{ width: `${pct}%` }}
         />
@@ -132,7 +132,7 @@ export default function FoodCard({ listing, onClaim, onCopy }: FoodCardProps) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full min-h-[160px] bg-gradient-to-b from-blue-400 to-blue-600 flex items-center justify-center text-4xl select-none">
+          <div className="w-full h-full min-h-[160px] bg-gradient-to-b from-orange-400 to-orange-600 flex items-center justify-center text-4xl select-none">
             🍽️
           </div>
         )}
@@ -183,7 +183,7 @@ export default function FoodCard({ listing, onClaim, onCopy }: FoodCardProps) {
           {showCopy ? (
             <button
               onClick={() => onCopy?.(id)}
-              className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
+              className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border border-orange-600 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
             >
               Copy
             </button>

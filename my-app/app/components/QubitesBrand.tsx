@@ -7,12 +7,12 @@ export default function QubitesBrand() {
   return (
     <div className="flex flex-col items-center gap-3">
       {/* Logo placeholder */}
-      <div className="w-20 h-20 rounded-2xl bg-blue-100 border border-blue-200 flex items-center justify-center text-4xl select-none">
+      <div className="w-20 h-20 rounded-2xl bg-orange-100 border border-orange-200 flex items-center justify-center text-4xl select-none">
         🍽️
       </div>
 
       {/* App name */}
-      <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
+      <h1 className="text-3xl font-bold text-orange-700 tracking-tight">
         Bob-a-bite
       </h1>
 

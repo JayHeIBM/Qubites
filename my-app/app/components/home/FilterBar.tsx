@@ -43,12 +43,12 @@ export default function FilterBar({ active, onToggle, visibleCount }: FilterBarP
         }}
         className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
           !anyActive
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+            ? 'bg-orange-600 text-white border-orange-600'
+            : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
         }`}
       >
         All
-        <span className={`text-[10px] font-bold ${!anyActive ? 'text-blue-100' : 'text-gray-400'}`}>
+        <span className={`text-[10px] font-bold ${!anyActive ? 'text-orange-100' : 'text-gray-400'}`}>
           {visibleCount}
         </span>
       </button>
@@ -61,8 +61,8 @@ export default function FilterBar({ active, onToggle, visibleCount }: FilterBarP
             onClick={() => onToggle(key)}
             className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
               on
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                ? 'bg-orange-600 text-white border-orange-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
             }`}
           >
             {on && (
