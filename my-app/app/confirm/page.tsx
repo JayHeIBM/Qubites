@@ -9,6 +9,7 @@ interface AssignmentDetail {
   status: string
   food_item_id: string
   foodName: string
+  imageUrl: string | null
   description: string | null
   cuisines: string[]
   dietaryTags: string[]
@@ -155,9 +156,16 @@ function ConfirmContent() {
         <h1 className="text-2xl font-bold text-blue-900 mb-1">Confirm your claim</h1>
         <p className="text-sm text-gray-400 mb-6">You have been matched with this meal.</p>
 
-        {/* Meal image placeholder */}
-        <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-4xl mb-5 select-none">
-          🍽️
+        {/* Meal image */}
+        <div className="w-full h-44 rounded-2xl overflow-hidden mb-5">
+          {detail?.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={detail.imageUrl} alt={detail.foodName} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-4xl select-none">
+              🍽️
+            </div>
+          )}
         </div>
 
         <h2 className="text-xl font-bold text-blue-900 mb-1">{detail?.foodName}</h2>

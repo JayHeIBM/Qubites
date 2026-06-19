@@ -13,18 +13,15 @@ const LISTING_TYPES: { value: ListingType; label: string; desc: string }[] = [
 ]
 
 const LOCATIONS = [
-  'Floor 1 – Reception',
-  'Floor 1 – Kitchen',
-  'Floor 2 – Lounge',
-  'Floor 2 – Meeting Room A',
-  'Floor 3 – Pantry',
-  'Floor 3 – Meeting Room B',
-  'Floor 4 – Kitchen',
-  'Floor 4 – Break Room',
-  'Floor 5 – Kitchen',
-  'Floor 5 – Conference Room A',
-  'Floor 5 – Conference Room B',
-  'Floor 6 – Break Room',
+  'Floor 9',
+  'Floor 10',
+  'Floor 11',
+  'Floor 12',
+  'Floor 13',
+  'Floor 14',
+  'Floor 15',
+  'Floor 16',
+  'Floor 17',
 ]
 
 // ── Helper ────────────────────────────────────────────────────────────────────

@@ -54,6 +54,7 @@ export async function GET(request: Request) {
     status: assignment.status,
     food_item_id: assignment.food_item_id,
     foodName: hydrated.name,
+    imageUrl: hydrated.imageUrl ?? null,
     description: availability?.description ?? null,
     cuisines: hydrated.cuisines,
     dietaryTags: hydrated.dietaryTags,
